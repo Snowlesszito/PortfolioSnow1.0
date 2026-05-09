@@ -194,3 +194,34 @@
   from { opacity: 1; }
   to   { opacity: 0; }
 }
+
+@media (max-width: 900px) {
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+    width: 92%;
+  }
+
+  .categories-title {
+    font-size: 1.5rem;
+  }
+
+  .cat-label {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .categories-grid {
+    grid-template-columns: 1fr;
+    width: 90%;
+  }
+
+  .cat-image {
+    border-width: 6px;
+    border-radius: 10px;
+  }
+
+  .categories-section .cat-title {
+    font-size: 1.2rem;
+  }
+}

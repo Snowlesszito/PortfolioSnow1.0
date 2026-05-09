@@ -69,3 +69,39 @@
   background: #66a4db;
   color: #000;
 }
+
+@media (max-width: 768px) {
+  .ka-image {
+    width: 90%;
+    max-width: 100%;
+  }
+
+  .ka-viewer {
+    gap: 0.75rem;
+  }
+
+  .ka-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ka-section {
+    padding: 2rem 0;
+  }
+
+  .ka-image {
+    width: 95%;
+  }
+
+  .ka-viewer {
+    gap: 0.4rem;
+  }
+
+  .ka-btn {
+    width: 32px;
+    height: 32px;
+  }
+}

@@ -207,4 +207,15 @@
   .tos-sign {
     padding: 1.5rem 1.2rem;
   }
+
+  .tos-title {
+    font-size: 1.5rem;
+    letter-spacing: 0.06em;
+    gap: 0.6rem;
+  }
+
+  .tos-title::before,
+  .tos-title::after {
+    width: 28px;
+  }
 }

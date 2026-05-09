@@ -114,3 +114,23 @@
   background: #66a4db;
   color: #000;
 }
+
+@media (max-width: 1024px) {
+  .pw-grid {
+    grid-template-columns: repeat(3, 1fr);
+    width: 90%;
+  }
+}
+
+@media (max-width: 600px) {
+  .pw-grid {
+    grid-template-columns: repeat(2, 1fr);
+    width: 95%;
+  }
+}
+
+@media (max-width: 400px) {
+  .pw-grid {
+    grid-template-columns: 1fr;
+  }
+}

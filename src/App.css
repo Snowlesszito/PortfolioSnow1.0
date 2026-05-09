@@ -24,6 +24,7 @@ body {
   font-family: 'Segoe UI', sans-serif;
   color: var(--text-primary);
   background: transparent;
+  overflow-x: hidden;
 }
 
 body::before {
@@ -340,4 +341,35 @@ button, input, textarea, select {
 @keyframes arrow-bounce {
   0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
   50%       { transform: translateX(-50%) translateY(12px); opacity: 0.85; }
+}
+
+@media (max-width: 768px) {
+  .hero::after {
+    inset: 6px;
+    border-width: 8px;
+  }
+
+  .logo {
+    width: min(85vw, 420px);
+  }
+
+  .tagline {
+    font-size: 1rem;
+    padding: 0 1.2rem;
+  }
+
+  .hero-cta {
+    padding: 0.75rem 1.8rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    width: min(90vw, 300px);
+  }
+
+  .tagline {
+    font-size: 0.88rem;
+  }
 }

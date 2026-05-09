@@ -109,3 +109,15 @@
     transform: none;
   }
 }
+
+@media (max-width: 480px) {
+  .ba-section {
+    padding: 2.5rem 1rem;
+    border-radius: 16px;
+  }
+
+  .ba-panel-media {
+    border-width: 5px;
+    border-radius: 10px;
+  }
+}

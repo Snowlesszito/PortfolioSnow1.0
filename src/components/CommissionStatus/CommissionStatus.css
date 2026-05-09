@@ -162,3 +162,49 @@
     display: none;
   }
 }
+
+@media (max-width: 768px) {
+  .cs-section {
+    padding: 3rem 1rem 4rem;
+  }
+
+  .cs-title {
+    font-size: 1.3rem;
+    letter-spacing: 0.1em;
+  }
+
+  .cs-title::before,
+  .cs-title::after {
+    width: 30px;
+  }
+
+  .cs-grid {
+    gap: 0.75rem;
+  }
+
+  .cs-card {
+    padding: 1.4rem 1.8rem;
+    min-width: 120px;
+  }
+
+  .cs-number {
+    font-size: 2.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+  }
+
+  .cs-card {
+    min-width: unset;
+  }
+
+  .cs-badge {
+    font-size: 0.82rem;
+    padding: 0.6rem 1.2rem;
+  }
+}
