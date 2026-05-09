@@ -1,0 +1,210 @@
+.tos-page {
+  min-height: 100vh;
+  padding: 3rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.tos-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(102, 164, 219, 0.07);
+  border: 1px solid rgba(102, 164, 219, 0.22);
+  color: #66a4db;
+  padding: 0.4rem 1rem 0.4rem 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: background 0.22s, border-color 0.22s, transform 0.22s, box-shadow 0.22s;
+}
+
+.tos-back:hover {
+  background: rgba(102, 164, 219, 0.15);
+  border-color: rgba(102, 164, 219, 0.5);
+  transform: translateX(-4px);
+  box-shadow: 0 2px 12px rgba(102, 164, 219, 0.15);
+}
+
+.tos-title {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #66a4db;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.tos-title::before {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #66a4db);
+  flex-shrink: 0;
+}
+
+.tos-title::after {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(90deg, #66a4db, transparent);
+  flex-shrink: 0;
+}
+
+.tos-subtitle {
+  color: #888;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.tos-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.tos-section {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(102, 164, 219, 0.15);
+  border-radius: 14px;
+  padding: 1.35rem 1.6rem;
+  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.tos-section:hover {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 6px 24px rgba(102, 164, 219, 0.09);
+  border-color: rgba(102, 164, 219, 0.28);
+}
+
+.tos-section-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #1a2a4a;
+  margin-bottom: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.tos-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 0.5rem;
+  border-radius: 6px;
+  background: rgba(102, 164, 219, 0.1);
+  border: 1px solid rgba(102, 164, 219, 0.28);
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #66a4db;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.tos-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tos-list li {
+  color: #4a5568;
+  font-size: 0.9rem;
+  line-height: 1.75;
+  padding-left: 1.2rem;
+  position: relative;
+}
+
+.tos-list li::before {
+  content: '·';
+  position: absolute;
+  left: 0.3rem;
+  color: #66a4db;
+  font-weight: 900;
+  font-size: 1.1rem;
+  line-height: 1.55;
+}
+
+.tos-sign {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+  width: 100%;
+  padding: 2rem 2.5rem;
+  background: rgba(102, 164, 219, 0.04);
+  border: 1.5px solid rgba(102, 164, 219, 0.18);
+  border-radius: 18px;
+}
+
+.tos-sign p {
+  color: #1a2a4a;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.tos-sign-buttons {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.tos-btn {
+  padding: 0.8rem 2rem;
+  background: transparent;
+  border: 1.5px solid #66a4db;
+  color: #66a4db;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tos-btn:hover {
+  background: #66a4db;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(102, 164, 219, 0.3);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 600px) {
+  .tos-page {
+    padding: 2rem 1.2rem;
+  }
+
+  .tos-sign {
+    padding: 1.5rem 1.2rem;
+  }
+}

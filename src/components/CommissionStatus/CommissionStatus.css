@@ -1,0 +1,164 @@
+.cs-section {
+  padding: 4rem 2rem 5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  position: relative;
+}
+
+.cs-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(102, 164, 219, 0.3), transparent);
+}
+
+.cs-title {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #66a4db;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.cs-title::before {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #66a4db);
+  flex-shrink: 0;
+}
+
+.cs-title::after {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(90deg, #66a4db, transparent);
+  flex-shrink: 0;
+}
+
+/* ── Badge ── */
+.cs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1.6rem;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+  transition: transform 0.2s;
+}
+
+.cs-badge:hover {
+  transform: scale(1.03);
+}
+
+.cs-badge span {
+  color: inherit;
+}
+
+.cs-badge-icon {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.6; }
+}
+
+/* ── Cards ── */
+.cs-grid {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cs-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(102, 164, 219, 0.22);
+  border-radius: 14px;
+  padding: 1.8rem 2.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 140px;
+  box-shadow: 0 4px 18px rgba(102, 164, 219, 0.08);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.cs-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(102, 164, 219, 0.5), transparent);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.cs-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 36px rgba(102, 164, 219, 0.18);
+  border-color: rgba(102, 164, 219, 0.45);
+}
+
+.cs-card:hover::before {
+  opacity: 1;
+}
+
+.cs-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #66a4db;
+  line-height: 1;
+  text-shadow: 0 0 24px rgba(102, 164, 219, 0.25);
+}
+
+.cs-label {
+  font-size: 0.78rem;
+  color: #888888;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ── Pintura decoration ── */
+.cs-pintura {
+  position: absolute;
+  right: -60px;
+  bottom: 0;
+  width: 420px;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 32px rgba(102, 164, 219, 0.18));
+}
+
+@media (max-width: 1100px) {
+  .cs-pintura {
+    display: none;
+  }
+}

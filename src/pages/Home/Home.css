@@ -1,0 +1,45 @@
+.hero-highlight {
+  width: 100%;
+  height: 55px;
+  background: linear-gradient(180deg, rgba(102,164,219,0.22), rgba(255,255,255,0.96));
+  margin-top: -6px;
+}
+
+@media (max-width: 900px) {
+  .hero-highlight {
+    height: 36px;
+  }
+}
+
+.home-tagline {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #555;
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+  margin: 2rem auto 0;
+}
+
+.home-grande {
+  display: block;
+  width: 700px;
+  max-width: 90%;
+  margin: -10rem auto 0;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 32px rgba(102, 164, 219, 0.15));
+}
+
+@media (max-width: 900px) {
+  .home-grande {
+    display: none;
+  }
+}
+
+.cc-about-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+

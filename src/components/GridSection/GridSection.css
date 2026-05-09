@@ -1,0 +1,51 @@
+.grid-section {
+  padding: 6rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.grid-title {
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #66a4db;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.grid-viewport {
+  width: 100%;
+  max-width: 900px;
+  height: 80vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.grid-track {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  will-change: transform;
+}
+
+.grid-item {
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: #111;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.grid-item:hover {
+  border-color: #66a4db;
+  transform: scale(1.02);
+}
+
+.grid-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
