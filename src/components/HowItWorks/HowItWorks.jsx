@@ -70,26 +70,19 @@ export default function HowItWorks() {
       <p className="hiw-subtitle">Simple, transparent and collaborative from start to finish.</p>
 
       <div className="hiw-steps">
-        <div className="hiw-circles-row">
-          {steps.map((step, i) => (
-            <div className="hiw-circle-wrap" key={i} onClick={() => go(i)}>
-              <div className={`hiw-circle${i === active ? ' hiw-circle-active' : ''}`}>{step.number}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="hiw-labels-row">
-          {steps.map((step, i) => (
-            <div
-              className={`hiw-step-body${i === active ? ' hiw-step-active' : ''}`}
-              key={i}
-              onClick={() => go(i)}
-            >
+        {steps.map((step, i) => (
+          <div
+            className={`hiw-step${i === active ? ' hiw-step-active' : ''}`}
+            key={i}
+            onClick={() => go(i)}
+          >
+            <div className={`hiw-circle${i === active ? ' hiw-circle-active' : ''}`}>{step.number}</div>
+            <div className="hiw-step-body">
               <h3 className="hiw-step-title">{step.title}</h3>
               <p className="hiw-step-desc">{step.description}</p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
       <div className="hiw-showcase">
