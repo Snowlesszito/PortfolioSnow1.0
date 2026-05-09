@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snowless Gallery</title>
+
+    <!-- SEO -->
+    <meta name="description" content="Hey! I'm Snowless, a Minecraft &amp; Roblox thumbmaker and keyartist with over 2 years of experience. Thumbnails, Key Art, banners and profile pictures that make your content stand out." />
+
+    <!-- Open Graph (Facebook, WhatsApp, Discord, LinkedIn...) -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content="https://snowlesszito.com" />
+    <meta property="og:title"       content="Snowless Gallery | Minecraft &amp; Roblox Art" />
+    <meta property="og:description" content="Hey! I'm Snowless, a Minecraft &amp; Roblox thumbmaker and keyartist with over 2 years of experience. Thumbnails, Key Art, banners and profile pictures that make your content stand out." />
+    <meta property="og:image"       content="https://snowlesszito.com/og-preview.png" />
+    <meta property="og:image:width"  content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="Snowless Gallery | Minecraft &amp; Roblox Art" />
+    <meta name="twitter:description" content="Hey! I'm Snowless, a Minecraft &amp; Roblox thumbmaker and keyartist with over 2 years of experience. Thumbnails, Key Art, banners and profile pictures that make your content stand out." />
+    <meta name="twitter:image"       content="https://snowlesszito.com/og-preview.png" />
+  <style>
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #f2f7fb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      transition: opacity 0.5s ease;
+    }
+    #loading-screen.done {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .ls-name {
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      color: #66a4db;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .ls-bar {
+      width: 180px;
+      height: 3px;
+      background: rgba(102, 164, 219, 0.2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .ls-bar-fill {
+      height: 100%;
+      background: #66a4db;
+      border-radius: 999px;
+      animation: ls-slide 1.2s ease-in-out infinite;
+    }
+    @keyframes ls-slide {
+      0%   { transform: translateX(-100%); }
+      50%  { transform: translateX(0%); }
+      100% { transform: translateX(100%); }
+    }
+  </style>
+    <script type="module" crossorigin src="/assets/index--mXhvgad.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C4kphI0G.css">
+  </head>
+  <body>
+    <div id="loading-screen">
+      <div class="ls-name">Snowless</div>
+      <div class="ls-bar"><div class="ls-bar-fill"></div></div>
+    </div>
+    <div id="root"></div>
+    <script>
+      (function() {
+        var p = new URLSearchParams(window.location.search).get('p');
+        if (p) window.history.replaceState(null, '', p);
+      })();
+    </script>
+  </body>
+</html>
