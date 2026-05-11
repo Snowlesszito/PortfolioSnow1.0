@@ -27,6 +27,46 @@ const staticThumbMap = {
   ),
 }
 
+// Compress image to max 1920×1080, output JPEG at given quality
+function compressImage(file, maxW = 1920, maxH = 1080, quality = 0.88) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+
+      let { width, height } = img
+      // scale down only — never upscale
+      if (width > maxW || height > maxH) {
+        const scale = Math.min(maxW / width, maxH / height)
+        width  = Math.round(width  * scale)
+        height = Math.round(height * scale)
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width  = width
+      canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+
+      canvas.toBlob(
+        blob => blob ? resolve(blob) : reject(new Error(`Falha ao comprimir ${file.name}`)),
+        'image/jpeg',
+        quality
+      )
+    }
+
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error(`Erro ao ler ${file.name}`)) }
+    img.src = objectUrl
+  })
+}
+
+function fmtBytes(bytes) {
+  if (bytes < 1024) return `${bytes}B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+}
+
 const STATUS_OPTIONS = ['Open', 'Closed', 'Limited']
 const COLUMNS = ['fila', 'wip', 'prontos', 'concluidos']
 const COLUMN_LABELS = {
@@ -235,9 +275,10 @@ export default function AdminPage() {
       if (thumbFileRef.current) thumbFileRef.current.value = ''
       return
     }
-    const oversized = files.filter(f => f.size > 5 * 1024 * 1024)
+    // 20MB input limit — compression will bring it down before upload
+    const oversized = files.filter(f => f.size > 20 * 1024 * 1024)
     if (oversized.length) {
-      setThumbError(`Imagens acima de 5MB: ${oversized.map(f => f.name).join(', ')}`)
+      setThumbError(`Imagens acima de 20MB: ${oversized.map(f => f.name).join(', ')}`)
       if (thumbFileRef.current) thumbFileRef.current.value = ''
       return
     }
@@ -248,12 +289,23 @@ export default function AdminPage() {
 
     try {
       const newImages = []
-      for (const file of files) {
-        const path = `thumbnails/${thumbCategory}/${Date.now()}_${file.name}`
+      let totalOriginal = 0
+      let totalCompressed = 0
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        setThumbSuccess(`Comprimindo ${i + 1}/${files.length}…`)
+
+        totalOriginal += file.size
+        const blob = await compressImage(file)
+        totalCompressed += blob.size
+
+        const baseName = file.name.replace(/\.[^.]+$/, '') + '.jpg'
+        const path = `thumbnails/${thumbCategory}/${Date.now()}_${baseName}`
         const fileRef = sRef(storage, path)
-        await uploadBytes(fileRef, file)
+        await uploadBytes(fileRef, blob)
         const url = await getDownloadURL(fileRef)
-        newImages.push({ url, name: file.name, path, isStatic: false })
+        newImages.push({ url, name: baseName, path, isStatic: false })
       }
 
       const newOrder = [...thumbOrder[thumbCategory], ...newImages]
@@ -261,8 +313,14 @@ export default function AdminPage() {
       setThumbOrder(prev => ({ ...prev, [thumbCategory]: newOrder }))
       localStorage.setItem('adminLastUpload', Date.now().toString())
       startCooldownTimer()
-      setThumbSuccess(`${files.length} imagem(ns) enviada(s) com sucesso!`)
-      setTimeout(() => setThumbSuccess(''), 3000)
+
+      const saved = totalOriginal - totalCompressed
+      const pct   = Math.round((saved / totalOriginal) * 100)
+      setThumbSuccess(
+        `${files.length} imagem(ns) enviada(s). ` +
+        `${fmtBytes(totalOriginal)} → ${fmtBytes(totalCompressed)} (−${pct}%)`
+      )
+      setTimeout(() => setThumbSuccess(''), 5000)
     } catch (err) {
       setThumbError(`Erro ao enviar: ${err.message}`)
     } finally {
@@ -466,7 +524,7 @@ export default function AdminPage() {
                   ? 'Enviando...'
                   : thumbCooldown > 0
                     ? `Cooldown: ${formatCooldown(thumbCooldown)}`
-                    : `Adicionar imagens a ${thumbCategory} (máx. ${UPLOAD_LIMIT}, até 5MB cada)`}
+                    : `Adicionar imagens a ${thumbCategory} (máx. ${UPLOAD_LIMIT}, até 20MB cada)`}
                 <input
                   type="file"
                   multiple
