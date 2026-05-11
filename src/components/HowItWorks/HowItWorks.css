@@ -287,26 +287,27 @@
     font-size: 0.75rem;
   }
 
-  /* Ajusta a linha vertical para o círculo menor */
   .hiw-steps::before {
     left: calc(0.5rem + 21px);
   }
 
-  .hiw-showcase-img-wrap {
+  .hiw-showcase {
     width: 100%;
-    max-width: 280px;
-    height: auto;
-    aspect-ratio: 1;
+    gap: 0.5rem;
   }
 
-  .hiw-showcase {
-    flex-direction: column;
-    gap: 0.75rem;
+  .hiw-showcase-img-wrap {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    max-width: none;
+    height: clamp(200px, 60vw, 320px);
   }
 
   .hiw-arrow {
     width: 36px;
     height: 36px;
     font-size: 1.5rem;
+    flex-shrink: 0;
   }
 }
