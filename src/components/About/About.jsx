@@ -33,12 +33,12 @@ function About() {
 
   return (
     <section className="about-section">
-      <div className="about-container">
-        <div className="about-skin">
-          <div className="skin-placeholder"><img src={skin} alt="Snowless Skin" /></div>
+      <div className="about-split">
+        <div className="about-split-left">
+          <img src={skin} alt="Snowless Skin" className="about-split-img" />
         </div>
 
-        <div className="about-content">
+        <div className="about-split-right">
           <div className="about-text">
             <h2 className="about-name">Snowless</h2>
             <p className="about-bio">
@@ -50,15 +50,17 @@ function About() {
           </div>
 
           <div className="about-stats">
-            <div className="about-stat-card">
+            <div className="about-stat-item">
               <span className="about-stat-number">+2</span>
               <span className="about-stat-label">YEARS OF EXPERIENCE</span>
             </div>
-            <div className="about-stat-card">
+            <div className="about-stat-divider" />
+            <div className="about-stat-item">
               <span className="about-stat-number">+{completedCount}</span>
               <span className="about-stat-label">COMPLETED ARTWORKS</span>
             </div>
-            <div className="about-stat-card">
+            <div className="about-stat-divider" />
+            <div className="about-stat-item">
               <span className="about-stat-number">+{clientsCount}</span>
               <span className="about-stat-label">SATISFIED CLIENTS</span>
             </div>
