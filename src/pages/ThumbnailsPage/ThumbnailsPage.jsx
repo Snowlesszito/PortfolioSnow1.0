@@ -62,7 +62,16 @@ export default function ThumbnailsPage() {
           }))
           .filter(w => w.src)
 
-        setOrderedWorks(prev => ({ ...prev, [cat]: resolved }))
+        const savedNames = new Set(order.map(item => item.name))
+        const extras = Object.entries(nameMap)
+          .filter(([name]) => !savedNames.has(name))
+          .map(([name, src], i) => ({
+            id: `extra_${cat}_${i}`,
+            src,
+            label: name,
+          }))
+
+        setOrderedWorks(prev => ({ ...prev, [cat]: [...resolved, ...extras] }))
       }
     }
     loadOrder()

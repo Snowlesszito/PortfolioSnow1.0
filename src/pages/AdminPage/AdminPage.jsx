@@ -563,7 +563,7 @@ export default function AdminPage() {
                           }}
                           onDragEnd={() => { setThumbDragIndex(null); setThumbDragOverIndex(null) }}
                         >
-                          <img src={url} alt={item.name} />
+                          <img src={url} alt={item.name} draggable={false} />
                           {item.isStatic
                             ? <span className="admin-thumb-static-badge">Static</span>
                             : <button className="admin-thumb-delete" onClick={() => deleteThumbnail(thumbCategory, i)}>✕</button>
