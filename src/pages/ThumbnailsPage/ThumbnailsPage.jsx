@@ -45,6 +45,17 @@ export default function ThumbnailsPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    function resolveItemName(item) {
+      return item.name ?? item.label ?? item.path?.split('/').pop() ?? ''
+    }
+
+    function resolveItemSrc(item, nameMap) {
+      if (item.isStatic) {
+        return nameMap[resolveItemName(item)] ?? null
+      }
+      return item.url ?? item.src ?? null
+    }
+
     async function loadOrder() {
       for (const cat of ['minecraft', 'roblox']) {
         const snap = await getDoc(doc(db, 'thumbnails', cat))
@@ -57,12 +68,12 @@ export default function ThumbnailsPage() {
         const resolved = order
           .map((item, i) => ({
             id: `ordered_${cat}_${i}`,
-            src: item.isStatic ? nameMap[item.name] : item.url,
-            label: item.name,
+            src: resolveItemSrc(item, nameMap),
+            label: resolveItemName(item),
           }))
           .filter(w => w.src)
 
-        const savedNames = new Set(order.map(item => item.name))
+        const savedNames = new Set(order.map(resolveItemName))
         const extras = Object.entries(nameMap)
           .filter(([name]) => !savedNames.has(name))
           .map(([name, src], i) => ({
