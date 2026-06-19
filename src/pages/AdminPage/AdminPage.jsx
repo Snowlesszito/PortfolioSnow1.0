@@ -7,6 +7,61 @@ import { useNavigate } from 'react-router-dom'
 import { loadGalleryItems, saveGalleryItems, getStaticGalleryItems } from '../../services/gallery'
 import './AdminPage.css'
 
+// ─── canais: fallback estático ────────────────────────────────────────────────
+const STATIC_CHANNELS = [
+  {
+    channelUrl: 'https://www.youtube.com/@cherryrar',
+    subscribers: '5M',
+    works: [
+      { videoUrl: 'https://youtu.be/CKV9ypw_J0g?si=whbpNwMh15OQIL3Q' },
+      { videoUrl: 'https://youtu.be/XCPrZd1TIR0?si=2BT87rlk7S5yZ-cA' },
+    ],
+  },
+  {
+    channelUrl: 'https://www.youtube.com/@PACtariik',
+    subscribers: '1.44M',
+    works: [{ videoUrl: 'https://youtu.be/5iecaGW8mVw?si=f8rfepjJAwsPzCAx' }],
+  },
+  {
+    channelUrl: 'https://www.youtube.com/@Himaru',
+    subscribers: '1.07M',
+    works: [{ label: 'Teste A/B' }],
+  },
+  {
+    channelUrl: 'https://www.youtube.com/@Febatista',
+    subscribers: '4.98M',
+    works: [{ videoUrl: 'https://youtu.be/f6G1Mag1px8?si=7QT_svaQaW-hNgQu' }],
+  },
+  {
+    channelUrl: 'https://www.youtube.com/@FerrazJogando',
+    subscribers: '39.7K',
+    works: [
+      { videoUrl: 'https://youtu.be/qAwds24C_-I?si=gEFDtoOZ1gk5lg0_' },
+      { videoUrl: 'https://youtu.be/Y5dODL0QfwM?si=girGgnEHG9IPS3-0' },
+      { videoUrl: 'https://youtu.be/JciovbtYlA0?si=osKOwwP4FJ2sf4cX' },
+    ],
+  },
+  {
+    channelUrl: 'https://www.youtube.com/@LifeboatNetwork',
+    subscribers: '123K',
+    works: [
+      { videoUrl: 'https://youtu.be/vmWKyq5U0-w?si=Jd_yM-pHeNUviKTX' },
+      { videoUrl: 'https://youtu.be/7UIs_eVkqYA?si=Np1URcxlLNpdX9nK' },
+      { videoUrl: 'https://youtu.be/_ZAEtDEkptg?si=fuKS_WJsMQSLJbwl' },
+      { videoUrl: 'https://youtu.be/24d0-OElGY8?si=JiKr1gSqGRYVG4PW' },
+      { videoUrl: 'https://youtu.be/mlP0O-jaX5s?si=JdWR27k3b1lHHlKi' },
+    ],
+  },
+]
+
+function extractVideoId(url) {
+  try {
+    const u = new URL(url)
+    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1)
+    return u.searchParams.get('v')
+  } catch { return null }
+}
+
 // ─── image compression ────────────────────────────────────────────────────────
 
 function compressImage(file, maxW = 1920, maxH = 1080, quality = 0.88) {
@@ -108,6 +163,15 @@ export default function AdminPage() {
 
   // ── gallery ──
   const [gallery,        setGallery]        = useState(makeEmptyGallery)
+
+  // ── channels ──
+  const [channels,       setChannels]       = useState(STATIC_CHANNELS)
+  const [channelsSaved,  setChannelsSaved]  = useState(false)
+  const [channelsError,  setChannelsError]  = useState('')
+  const [newChannel,     setNewChannel]     = useState({ channelUrl: '', subscribers: '' })
+  const [newChannelErr,  setNewChannelErr]  = useState('')
+  const [expandedCh,     setExpandedCh]     = useState(null)  // index do canal expandido
+  const [newVideo,       setNewVideo]       = useState({})    // { [chIndex]: { videoUrl: '', label: '' } }
   const [galleryLoading, setGalleryLoading] = useState(true)
   const [galleryError,   setGalleryError]   = useState('')
   const [galleryCategory,setGalleryCategory]= useState('thumbnails')
@@ -131,6 +195,23 @@ export default function AdminPage() {
     getDoc(doc(db, 'commissions', 'status')).then(snap => {
       if (snap.exists()) setCommissions(prev => ({ ...INITIAL_COMMISSIONS, ...snap.data() }))
     })
+  }, [])
+
+  // ── load channels ──
+  useEffect(() => {
+    let active = true
+    async function load() {
+      try {
+        const snap = await getDoc(doc(db, 'channels', 'list'))
+        if (!snap.exists()) return
+        const data = snap.data().channels
+        if (active && Array.isArray(data) && data.length > 0) setChannels(data)
+      } catch (err) {
+        console.warn('[admin] channels load failed', err)
+      }
+    }
+    load()
+    return () => { active = false }
   }, [])
 
   // ── load gallery ──
@@ -321,6 +402,63 @@ export default function AdminPage() {
     }
   }
 
+  // ─── channels helpers ──────────────────────────────────────────────────────
+
+  async function saveChannels(list) {
+    await setDoc(doc(db, 'channels', 'list'), { channels: list })
+    setChannelsSaved(true)
+    setTimeout(() => setChannelsSaved(false), 2000)
+  }
+
+  function addChannel() {
+    const url  = newChannel.channelUrl.trim()
+    const subs = newChannel.subscribers.trim()
+    if (!url) { setNewChannelErr('Informe a URL do canal.'); return }
+    if (!/^https?:\/\/(www\.)?youtube\.com\//i.test(url)) {
+      setNewChannelErr('Use uma URL do YouTube (youtube.com/@handle).')
+      return
+    }
+    setNewChannelErr('')
+    const updated = [...channels, { channelUrl: url, subscribers: subs, works: [] }]
+    setChannels(updated)
+    setNewChannel({ channelUrl: '', subscribers: '' })
+    saveChannels(updated)
+  }
+
+  function removeChannel(index) {
+    const updated = channels.filter((_, i) => i !== index)
+    setChannels(updated)
+    saveChannels(updated)
+  }
+
+  function addVideoToChannel(chIndex) {
+    const v = newVideo[chIndex] ?? {}
+    const videoUrl = (v.videoUrl ?? '').trim()
+    const label    = (v.label    ?? '').trim()
+    if (!videoUrl && !label) return
+    const updated = channels.map((ch, i) => {
+      if (i !== chIndex) return ch
+      return { ...ch, works: [...(ch.works ?? []), { videoUrl: videoUrl || undefined, label: label || undefined }] }
+    })
+    setChannels(updated)
+    setNewVideo(prev => ({ ...prev, [chIndex]: { videoUrl: '', label: '' } }))
+    saveChannels(updated)
+  }
+
+  function removeVideoFromChannel(chIndex, vIndex) {
+    const updated = channels.map((ch, i) => {
+      if (i !== chIndex) return ch
+      return { ...ch, works: (ch.works ?? []).filter((_, j) => j !== vIndex) }
+    })
+    setChannels(updated)
+    saveChannels(updated)
+  }
+
+  function updateSubscribers(chIndex, value) {
+    const updated = channels.map((ch, i) => i === chIndex ? { ...ch, subscribers: value } : ch)
+    setChannels(updated)
+  }
+
   // ─── commissions helpers ───────────────────────────────────────────────────
 
   async function saveCommissions(data) {
@@ -400,6 +538,12 @@ export default function AdminPage() {
             onClick={() => setSection('arts')}
           >
             <span className="admin-sidebar-icon">🖼</span>Artes
+          </button>
+          <button
+            className={`admin-sidebar-item ${section === 'channels' ? 'active' : ''}`}
+            onClick={() => setSection('channels')}
+          >
+            <span className="admin-sidebar-icon">📺</span>Canais
           </button>
         </nav>
         <button className="admin-sidebar-logout" onClick={() => signOut(auth)}>Logout</button>
@@ -629,6 +773,143 @@ export default function AdminPage() {
                   )
                 })}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── CHANNELS ────────────────────────────────────────────────────── */}
+        {section === 'channels' && (
+          <div className="admin-page">
+            <div className="admin-header">
+              <h1>Canais</h1>
+              <button className="admin-save" onClick={() => saveChannels(channels)}>
+                {channelsSaved ? '✓ Salvo!' : 'Salvar'}
+              </button>
+            </div>
+
+            {channelsError && <p className="admin-error">{channelsError}</p>}
+
+            {/* adicionar canal */}
+            <div className="admin-section">
+              <h2>Adicionar canal</h2>
+              <div className="admin-client-row">
+                <input
+                  type="url"
+                  placeholder="URL do canal (ex: https://www.youtube.com/@handle)"
+                  value={newChannel.channelUrl}
+                  onChange={e => { setNewChannel(p => ({ ...p, channelUrl: e.target.value })); setNewChannelErr('') }}
+                  onKeyDown={e => e.key === 'Enter' && addChannel()}
+                  style={{ flex: 2 }}
+                />
+                <input
+                  placeholder="Subscribers (ex: 1.44M)"
+                  value={newChannel.subscribers}
+                  onChange={e => setNewChannel(p => ({ ...p, subscribers: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && addChannel()}
+                  style={{ flex: 1 }}
+                />
+                <button onClick={addChannel}>Adicionar</button>
+              </div>
+              {newChannelErr && <p className="admin-error">{newChannelErr}</p>}
+            </div>
+
+            {/* lista de canais */}
+            <div className="admin-section">
+              <h2>Canais cadastrados ({channels.length})</h2>
+              <p className="admin-info-text">Clique em um canal para gerenciar os vídeos.</p>
+
+              {channels.length === 0 && <p className="admin-info-text">Nenhum canal ainda.</p>}
+
+              {channels.map((ch, chIndex) => {
+                const handle = (() => {
+                  try {
+                    const parts = new URL(ch.channelUrl).pathname.split('/').filter(Boolean)
+                    return parts[0] ?? ch.channelUrl
+                  } catch { return ch.channelUrl }
+                })()
+                const isExpanded = expandedCh === chIndex
+
+                return (
+                  <div key={chIndex} className="admin-channel-item">
+                    <div className="admin-channel-header" onClick={() => setExpandedCh(isExpanded ? null : chIndex)}>
+                      <span className="admin-channel-handle">{handle}</span>
+                      <div className="admin-channel-meta">
+                        <input
+                          className="admin-channel-subs-input"
+                          value={ch.subscribers}
+                          onChange={e => { e.stopPropagation(); updateSubscribers(chIndex, e.target.value) }}
+                          onClick={e => e.stopPropagation()}
+                          placeholder="Subscribers"
+                          title="Subscribers"
+                        />
+                        <span className="admin-channel-count">{(ch.works ?? []).length} vídeo(s)</span>
+                        <span className="admin-channel-toggle">{isExpanded ? '▲' : '▼'}</span>
+                        <button
+                          className="admin-remove"
+                          onClick={e => { e.stopPropagation(); removeChannel(chIndex) }}
+                          title="Remover canal"
+                        >✕</button>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="admin-channel-body">
+                        {/* vídeos existentes */}
+                        {(ch.works ?? []).length === 0 && (
+                          <p className="admin-info-text">Nenhum vídeo/badge ainda.</p>
+                        )}
+                        <div className="admin-thumb-grid">
+                          {(ch.works ?? []).map((work, vIndex) => {
+                            const vid   = work.videoUrl ? (() => {
+                              try {
+                                const u = new URL(work.videoUrl)
+                                return u.hostname.includes('youtu.be') ? u.pathname.slice(1) : u.searchParams.get('v')
+                              } catch { return null }
+                            })() : null
+                            const thumb = vid ? `https://img.youtube.com/vi/${vid}/mqdefault.jpg` : null
+
+                            return (
+                              <div key={vIndex} className="admin-thumb-item" style={{ position: 'relative' }}>
+                                {thumb
+                                  ? <img src={thumb} alt={work.label ?? `Vídeo ${vIndex + 1}`} draggable={false} />
+                                  : <div style={{ background: '#222', width: '100%', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#66a4db', fontSize: '0.75rem', padding: '0.5rem', textAlign: 'center' }}>{work.label ?? 'badge'}</div>
+                                }
+                                <button
+                                  className="admin-thumb-delete"
+                                  onClick={() => removeVideoFromChannel(chIndex, vIndex)}
+                                  title="Remover"
+                                >✕</button>
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        {/* adicionar vídeo */}
+                        <div className="admin-url-input-section" style={{ marginTop: '1rem' }}>
+                          <h3>Adicionar vídeo</h3>
+                          <div className="admin-url-input-row">
+                            <input
+                              type="url"
+                              placeholder="URL do vídeo (youtu.be/... ou youtube.com/watch?v=...)"
+                              value={newVideo[chIndex]?.videoUrl ?? ''}
+                              onChange={e => setNewVideo(p => ({ ...p, [chIndex]: { ...p[chIndex], videoUrl: e.target.value } }))}
+                              onKeyDown={e => e.key === 'Enter' && addVideoToChannel(chIndex)}
+                            />
+                            <input
+                              placeholder="Label (opcional)"
+                              value={newVideo[chIndex]?.label ?? ''}
+                              onChange={e => setNewVideo(p => ({ ...p, [chIndex]: { ...p[chIndex], label: e.target.value } }))}
+                              onKeyDown={e => e.key === 'Enter' && addVideoToChannel(chIndex)}
+                              style={{ maxWidth: '160px' }}
+                            />
+                            <button onClick={() => addVideoToChannel(chIndex)}>Adicionar</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
