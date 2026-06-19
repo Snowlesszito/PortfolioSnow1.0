@@ -1,184 +1,204 @@
+/**
+ * gallery.js — sistema unificado de galeria
+ *
+ * Estrutura no Firestore:
+ *   galleries/{category}  →  { platforms: { minecraft: [...], roblox: [...] } }
+ *
+ * Cada item salvo tem a forma:  { id, url, label }
+ *
+ * Thumbnails agora vivem AQUI também (migração automática da coleção velha
+ * `thumbnails/{cat}` na primeira leitura).
+ */
+
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { STATIC_GALLERY_URLS } from './staticUrls'
 
 export const GALLERY_CATEGORIES = ['thumbnails', 'keyarts', 'promocional', 'profiles']
-export const GALLERY_PLATFORMS = ['minecraft', 'roblox']
+export const GALLERY_PLATFORMS   = ['minecraft', 'roblox']
 
-const staticSrcMap = STATIC_GALLERY_URLS
+// ─── helpers estáticos ────────────────────────────────────────────────────────
 
-const staticGalleryItems = Object.fromEntries(
-  Object.entries(staticSrcMap).map(([category, platformMap]) => [
-    category,
-    Object.fromEntries(
-      Object.entries(platformMap).map(([platform, map]) => [
-        platform,
-        Object.entries(map).map(([name, src], index) => ({
-          id: `static_${category}_${platform}_${index}`,
-          src,
-          label: name,
-        })),
-      ])
-    ),
-  ])
-)
-
+/**
+ * Retorna a lista estática de uma categoria/plataforma como objetos
+ * { id, src, url, label }.
+ */
 export function getStaticGalleryItems(category, platform) {
+  const cat = STATIC_GALLERY_URLS[category]
+  if (!cat) return []
+
   if (platform) {
-    return staticGalleryItems[category]?.[platform] ?? []
+    const map = cat[platform] ?? {}
+    return Object.entries(map).map(([name, src], i) => ({
+      id:    `static_${category}_${platform}_${i}`,
+      src,
+      url:   src,
+      label: name,
+    }))
   }
 
-  if (category === 'thumbnails' || category === 'profiles') {
-    return [
-      ...(staticGalleryItems[category]?.minecraft ?? []),
-      ...(staticGalleryItems[category]?.roblox ?? []),
-    ]
-  }
-
-  return staticGalleryItems[category]?.minecraft ?? []
+  // sem plataforma: retorna tudo em sequência
+  return GALLERY_PLATFORMS.flatMap((plt) => getStaticGalleryItems(category, plt))
 }
 
-function resolveItemUrl(item, category, platform) {
-  if (!item) return null
-  if (typeof item === 'string') return item
-  if (typeof item === 'object') {
-    const candidates = [item.url, item.src, item.image, item.link, item.path]
-    const found = candidates.find(value => typeof value === 'string' && value.trim().length > 0)
-    if (found) return found
+// ─── serialização / desserialização ──────────────────────────────────────────
 
-    if (item.name && typeof item.name === 'string') {
-      if (!platform) {
-        const sourceMap = staticSrcMap[category]
-        if (!sourceMap) return null
-        return sourceMap.minecraft?.[item.name] ?? sourceMap.roblox?.[item.name] ?? null
-      }
-      return staticSrcMap[category]?.[platform]?.[item.name] ?? null
-    }
-  }
-  return null
-}
+/** Converte um item do Firestore (ou legado) para { id, src, url, label }. */
+function deserializeItem(raw, index, category, platform) {
+  if (!raw) return null
 
-function mergeWithFallback(items, fallback) {
-  if (!fallback || !fallback.length) return items
-  const remoteBySrc = new Map(
-    items
-      .filter(item => item.src)
-      .map(item => [item.src.trim(), item])
-  )
+  // item já no formato novo
+  const url =
+    raw.url  ??
+    raw.src  ??
+    raw.image ??
+    raw.link  ??
+    raw.path  ??
+    (typeof raw === 'string' ? raw : null)
 
-  const result = fallback.map(item => {
-    const src = item.src?.trim()
-    return src && remoteBySrc.has(src)
-      ? remoteBySrc.get(src)
-      : item
-  })
-
-  const fallbackSrcs = new Set(result.map(item => item.src?.trim()).filter(Boolean))
-  const extra = items.filter(item => {
-    const src = item.src?.trim()
-    return src && !fallbackSrcs.has(src)
-  })
-
-  return [...result, ...extra]
-}
-
-export async function loadGalleryItems(category, platform) {
-  if (!platform) {
-    if (category === 'thumbnails' || category === 'profiles') {
-      const [minecraft, roblox] = await Promise.all([
-        loadGalleryItems(category, 'minecraft'),
-        loadGalleryItems(category, 'roblox'),
-      ])
-      return [...minecraft, ...roblox]
-    }
-
-    return loadGalleryItems(category, 'minecraft')
-  }
-
-  const normalizedPlatform = platform.toLowerCase()
-  const fallback = getStaticGalleryItems(category, normalizedPlatform)
-
-  try {
-    const snap = await getDoc(doc(db, 'galleries', category))
-    if (!snap.exists()) {
-      if (category === 'thumbnails') {
-        const oldSnap = await getDoc(doc(db, 'thumbnails', normalizedPlatform))
-        if (oldSnap.exists()) {
-          const stored = oldSnap.data().order ?? oldSnap.data().images?.map(img => ({ ...img, isStatic: false })) ?? []
-          const resolvedOld = stored
-            .map((item, index) => ({
-              id: item?.id ?? item?.name ?? item?.url ?? (typeof item === 'string' ? item : `${category}_${normalizedPlatform}_${index}`),
-              src: resolveItemUrl(item, category, normalizedPlatform),
-              label: item?.label ?? item?.name ?? (typeof item === 'string' ? item : `Item ${index + 1}`),
-            }))
-            .filter(item => item.src)
-          const mergedOld = mergeWithFallback(resolvedOld, fallback)
-          return mergedOld.length ? mergedOld : fallback
-        }
-      }
-      return fallback
-    }
-
-    const data = snap.data()
-    const rawItems = data.platforms?.[normalizedPlatform]
-      ?? data[normalizedPlatform]
-      ?? []
-
-    if (!Array.isArray(rawItems) || rawItems.length === 0) return fallback
-
-    const resolvedItems = rawItems
-      .map((item, index) => {
-        const resolved = resolveItemUrl(item, category, normalizedPlatform)
+  if (!url) {
+    // tentativa: item estático referenciado por nome
+    if (raw.name) {
+      const staticUrl =
+        STATIC_GALLERY_URLS[category]?.[platform]?.[raw.name] ?? null
+      if (staticUrl) {
         return {
-          id: item?.id ?? item?.name ?? item?.url ?? (typeof item === 'string' ? item : null) ?? `${category}_${normalizedPlatform}_${index}`,
-          url: resolved,
-          src: resolved,
-          label: item?.label ?? item?.name ?? (typeof item === 'string' ? item : `Item ${index + 1}`),
+          id:    raw.id ?? `static_${category}_${platform}_${index}`,
+          src:   staticUrl,
+          url:   staticUrl,
+          label: raw.label ?? raw.name,
         }
-      })
-      .filter(item => item.src)
-
-    if (category === 'thumbnails') {
-      const merged = mergeWithFallback(resolvedItems, fallback)
-      return merged.length ? merged : fallback
+      }
     }
+    return null
+  }
 
-    return resolvedItems.length ? resolvedItems : fallback
-  } catch (error) {
-    console.warn('[gallery] loadGalleryItems failed for', category, platform, error)
-    return fallback
+  return {
+    id:    raw.id ?? raw.name ?? url ?? `${category}_${platform}_${index}`,
+    src:   url,
+    url,
+    label: raw.label ?? raw.name ?? url.split('/').pop() ?? `Item ${index + 1}`,
   }
 }
 
-export async function loadGalleryPlatform(category, platform) {
+/** Converte um item de volta para o formato mínimo a ser salvo. */
+function serializeItem(item, index, category, platform) {
+  const url = item.url ?? item.src ?? null
+  if (!url) return null
+  return {
+    id:    item.id ?? `${category}_${platform}_${index}`,
+    url,
+    label: item.label ?? url.split('/').pop() ?? `Item ${index + 1}`,
+  }
+}
+
+// ─── migração legado ──────────────────────────────────────────────────────────
+
+/**
+ * Lê a coleção antiga `thumbnails/{platform}` e retorna itens deserializados.
+ * Retorna [] se não existir.
+ */
+async function migrateOldThumbnails(platform) {
   try {
-    const snap = await getDoc(doc(db, 'galleries', category))
+    const snap = await getDoc(doc(db, 'thumbnails', platform))
     if (!snap.exists()) return []
 
-    const rawItems = snap.data().platforms?.[platform] ?? []
-    if (!Array.isArray(rawItems) || rawItems.length === 0) return []
+    const stored =
+      snap.data().order ??
+      snap.data().images?.map((img) => ({ ...img })) ??
+      []
 
-    return rawItems
-      .map((item, index) => ({
-        id: item.id ?? item.name ?? item.url ?? `${category}_${platform}_${index}`,
-        url: item.url ?? item.src ?? null,
-        label: item.label ?? item.name ?? `Item ${index + 1}`,
-      }))
-      .filter(item => item.url)
-  } catch (error) {
-    console.warn('[gallery] loadGalleryPlatform failed for', category, platform, error)
+    const staticMap = STATIC_GALLERY_URLS.thumbnails?.[platform] ?? {}
+
+    return stored
+      .map((raw, i) => {
+        // item estático legado: { name, isStatic: true }
+        if (raw.isStatic && raw.name) {
+          const url = staticMap[raw.name]
+          if (!url) return null
+          return { id: `static_thumbnails_${platform}_${i}`, src: url, url, label: raw.name }
+        }
+        return deserializeItem(raw, i, 'thumbnails', platform)
+      })
+      .filter(Boolean)
+  } catch {
     return []
   }
 }
 
-export async function saveGalleryItems(category, platform, items) {
-  const sanitized = items.map((item, index) => {
-    const url = item.url ?? item.src ?? item.path ?? null
-    return {
-      id: item.id ?? `${category}_${platform}_${index}`,
-      url,
-      label: item.label ?? (url ? url.split('/').pop() : `Item ${index + 1}`),
+// ─── leitura ─────────────────────────────────────────────────────────────────
+
+/**
+ * Carrega itens de uma categoria/plataforma.
+ *
+ * Prioridade:
+ *   1. Firestore `galleries/{category}.platforms.{platform}`
+ *   2. Migração da coleção antiga `thumbnails/{platform}` (só para thumbnails)
+ *   3. Fallback estático de staticUrls.js
+ *
+ * @param {string} category
+ * @param {string|undefined} platform  — se omitido, retorna todas as plataformas
+ */
+export async function loadGalleryItems(category, platform) {
+  // sem plataforma: retorna todas em sequência
+  if (!platform) {
+    const results = await Promise.all(
+      GALLERY_PLATFORMS.map((plt) => loadGalleryItems(category, plt))
+    )
+    return results.flat()
+  }
+
+  const plt      = platform.toLowerCase()
+  const fallback = getStaticGalleryItems(category, plt)
+
+  try {
+    const snap = await getDoc(doc(db, 'galleries', category))
+
+    if (snap.exists()) {
+      // ── lê do sistema novo ──
+      const raw = snap.data()?.platforms?.[plt]
+
+      // garante que só usamos o campo da plataforma certa
+      if (!Array.isArray(raw) || raw.length === 0) return fallback
+
+      const items = raw
+        .map((item, i) => deserializeItem(item, i, category, plt))
+        .filter(Boolean)
+
+      return items.length ? items : fallback
     }
-  }).filter(item => item.url)
-  await setDoc(doc(db, 'galleries', category), { platforms: { [platform]: sanitized } }, { merge: true })
+
+    // ── doc não existe: tenta migração legada (thumbnails) ──
+    if (category === 'thumbnails') {
+      const migrated = await migrateOldThumbnails(plt)
+      if (migrated.length) return migrated
+    }
+
+    return fallback
+  } catch (err) {
+    console.warn('[gallery] loadGalleryItems error', category, plt, err)
+    return fallback
+  }
+}
+
+// ─── escrita ──────────────────────────────────────────────────────────────────
+
+/**
+ * Salva itens de uma plataforma específica sem sobrescrever a outra.
+ *
+ * @param {string} category
+ * @param {string} platform
+ * @param {Array}  items    — itens com pelo menos { url } ou { src }
+ */
+export async function saveGalleryItems(category, platform, items) {
+  const plt       = platform.toLowerCase()
+  const sanitized = items
+    .map((item, i) => serializeItem(item, i, category, plt))
+    .filter(Boolean)
+
+  await setDoc(
+    doc(db, 'galleries', category),
+    { platforms: { [plt]: sanitized } },
+    { merge: true }
+  )
 }
