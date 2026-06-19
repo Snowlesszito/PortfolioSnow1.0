@@ -122,11 +122,6 @@ export async function loadGalleryItems(category, platform) {
     const data = snap.data()
     const rawItems = data.platforms?.[normalizedPlatform]
       ?? data[normalizedPlatform]
-      ?? data.order
-      ?? data.images
-      ?? data.items
-      ?? data.urls
-      ?? Object.values(data).find(value => Array.isArray(value))
       ?? []
 
     if (!Array.isArray(rawItems) || rawItems.length === 0) return fallback

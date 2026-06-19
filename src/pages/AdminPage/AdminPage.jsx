@@ -5,13 +5,7 @@ import { ref as sRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase
 import { signOut } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { loadGalleryItems, saveGalleryItems } from '../../services/gallery'
-import { STATIC_GALLERY_URLS } from '../../services/staticUrls'
 import './AdminPage.css'
-
-const staticThumbMap = {
-  minecraft: STATIC_GALLERY_URLS.thumbnails.minecraft,
-  roblox: STATIC_GALLERY_URLS.thumbnails.roblox,
-}
 
 // Compress image to max 1920×1080, output JPEG at given quality
 function compressImage(file, maxW = 1920, maxH = 1080, quality = 0.88) {
@@ -23,7 +17,6 @@ function compressImage(file, maxW = 1920, maxH = 1080, quality = 0.88) {
       URL.revokeObjectURL(objectUrl)
 
       let { width, height } = img
-      // scale down only — never upscale
       if (width > maxW || height > maxH) {
         const scale = Math.min(maxW / width, maxH / height)
         width  = Math.round(width  * scale)
@@ -93,13 +86,9 @@ function getTimeUntilNextUpload() {
   return remaining > 0 ? remaining : 0
 }
 
-function resolveThumbUrl(item, cat) {
-  return item.isStatic ? (staticThumbMap[cat]?.[item.name] ?? null) : item.url
-}
-
 export default function AdminPage() {
   const navigate = useNavigate()
-  const [section, setSection] = useState('commissions') // 'commissions' | 'arts'
+  const [section, setSection] = useState('commissions')
 
   // ── Commissions ──
   const [data, setData] = useState(INITIAL_STATE)
@@ -148,23 +137,12 @@ export default function AdminPage() {
     load()
   }, [])
 
-  // ── Load thumbnails ──
+  // ── Load thumbnails via galleries collection (mesma fonte que o site público usa) ──
   useEffect(() => {
     async function loadThumbs() {
       for (const cat of ['minecraft', 'roblox']) {
-        const snap = await getDoc(doc(db, 'thumbnails', cat))
-        // migrate old `images` field → new `order` format
-        const stored = snap.exists()
-          ? (snap.data().order ?? snap.data().images?.map(img => ({ ...img, isStatic: false })) ?? [])
-          : []
-
-        // append any static images not yet tracked in stored order
-        const trackedStatics = new Set(stored.filter(i => i.isStatic).map(i => i.name))
-        const newStatics = Object.keys(staticThumbMap[cat])
-          .filter(name => !trackedStatics.has(name))
-          .map(name => ({ name, isStatic: true }))
-
-        setThumbOrder(prev => ({ ...prev, [cat]: [...stored, ...newStatics] }))
+        const items = await loadGalleryItems('thumbnails', cat)
+        setThumbOrder(prev => ({ ...prev, [cat]: items }))
       }
     }
     loadThumbs()
@@ -305,7 +283,6 @@ export default function AdminPage() {
       if (thumbFileRef.current) thumbFileRef.current.value = ''
       return
     }
-    // 20MB input limit — compression will bring it down before upload
     const oversized = files.filter(f => f.size > 20 * 1024 * 1024)
     if (oversized.length) {
       setThumbError(`Imagens acima de 20MB: ${oversized.map(f => f.name).join(', ')}`)
@@ -335,17 +312,18 @@ export default function AdminPage() {
         const fileRef = sRef(storage, path)
         await uploadBytes(fileRef, blob)
         const url = await getDownloadURL(fileRef)
-        newImages.push({ url, name: baseName, path, isStatic: false })
+        newImages.push({ url, name: baseName, label: baseName, path })
       }
 
       const newOrder = [...thumbOrder[galleryPlatform], ...newImages]
       await setDoc(doc(db, 'thumbnails', galleryPlatform), { order: newOrder }, { merge: true })
+      await saveGalleryItems('thumbnails', galleryPlatform, newOrder)
       setThumbOrder(prev => ({ ...prev, [galleryPlatform]: newOrder }))
       localStorage.setItem('adminLastUpload', Date.now().toString())
       startCooldownTimer()
 
-      const saved = totalOriginal - totalCompressed
-      const pct   = Math.round((saved / totalOriginal) * 100)
+      const savedBytes = totalOriginal - totalCompressed
+      const pct = Math.round((savedBytes / totalOriginal) * 100)
       setThumbSuccess(
         `${files.length} imagem(ns) enviada(s). ` +
         `${fmtBytes(totalOriginal)} → ${fmtBytes(totalCompressed)} (−${pct}%)`
@@ -361,10 +339,13 @@ export default function AdminPage() {
 
   async function deleteThumbnail(cat, index) {
     const item = thumbOrder[cat][index]
-    if (item.isStatic) return
-    try { await deleteObject(sRef(storage, item.path)) } catch {}
+    // Tenta deletar do storage se tiver path (imagens uploadadas); ignora erros (URLs externas não têm path)
+    if (item.path) {
+      try { await deleteObject(sRef(storage, item.path)) } catch {}
+    }
     const newOrder = thumbOrder[cat].filter((_, i) => i !== index)
     await setDoc(doc(db, 'thumbnails', cat), { order: newOrder }, { merge: true })
+    await saveGalleryItems('thumbnails', cat, newOrder)
     setThumbOrder(prev => ({ ...prev, [cat]: newOrder }))
   }
 
@@ -389,17 +370,13 @@ export default function AdminPage() {
     setNewImageSuccess('')
 
     const fileName = url.split('/').pop().split('?')[0] || `image-${Date.now()}`
-    const newItem = {
-      url,
-      name: fileName,
-      label: fileName,
-      isStatic: false,
-    }
+    const newItem = { url, name: fileName, label: fileName }
 
     try {
       if (galleryCategory === 'thumbnails') {
         const updated = [...thumbOrder[galleryPlatform], newItem]
         await setDoc(doc(db, 'thumbnails', galleryPlatform), { order: updated }, { merge: true })
+        await saveGalleryItems('thumbnails', galleryPlatform, updated)
         setThumbOrder(prev => ({ ...prev, [galleryPlatform]: updated }))
       } else {
         const updated = [...(galleryOrder[galleryCategory]?.[galleryPlatform] || []), newItem]
@@ -426,7 +403,15 @@ export default function AdminPage() {
     const [moved] = list.splice(fromIndex, 1)
     list.splice(toIndex, 0, moved)
     setThumbOrder(prev => ({ ...prev, [cat]: list }))
-    await setDoc(doc(db, 'thumbnails', cat), { order: list }, { merge: true })
+    console.log('[reorder] thumbnails', cat, 'de', fromIndex, 'para', toIndex, list.map(i => i.name ?? i.url))
+    try {
+      await setDoc(doc(db, 'thumbnails', cat), { order: list }, { merge: true })
+      console.log('✓ thumbnails salvo')
+    } catch (e) { console.error('✗ thumbnails:', e) }
+    try {
+      await saveGalleryItems('thumbnails', cat, list)
+      console.log('✓ galleries/thumbnails salvo')
+    } catch (e) { console.error('✗ galleries/thumbnails:', e) }
   }
 
   async function reorderGalleryItems(category, platform, fromIndex, toIndex) {
@@ -441,7 +426,11 @@ export default function AdminPage() {
         [platform]: list,
       },
     }))
-    await saveGalleryItems(category, platform, list)
+    console.log('[reorder] gallery', category, platform, 'de', fromIndex, 'para', toIndex)
+    try {
+      await saveGalleryItems(category, platform, list)
+      console.log('✓ galleries salvo')
+    } catch (e) { console.error('✗ galleries:', e) }
   }
 
   // ── Render ──
@@ -668,7 +657,7 @@ export default function AdminPage() {
               </div>
 
               <p className="admin-info-text">
-                Arraste para reordenar as imagens. Para categorias estáticas, edição deve ser feita diretamente nas fontes ou no Firestore.
+                Arraste para reordenar as imagens. Clique em ✕ para remover.
               </p>
 
               <div className="admin-thumb-grid">
@@ -682,15 +671,22 @@ export default function AdminPage() {
                     ? <p className="admin-info-text">Nenhuma imagem encontrada.</p>
                     : items.map((item, i) => {
                         const url = galleryCategory === 'thumbnails'
-                          ? resolveThumbUrl(item, galleryPlatform)
-                          : item.src
+                          ? item.url
+                          : (item.src ?? item.url)
                         if (!url) return null
-                        const isStatic = galleryCategory === 'thumbnails' ? item.isStatic : false
 
                         return (
                           <div
                             key={item.id ?? i}
-                            className={`admin-thumb-item${galleryCategory === 'thumbnails' ? (thumbDragIndex === i ? ' dragging-thumb' : '') : (galleryDragIndex === i ? ' dragging-thumb' : '')}${galleryCategory === 'thumbnails' ? (thumbDragOverIndex === i && thumbDragIndex !== i ? ' drag-over' : '') : (galleryDragOverIndex === i && galleryDragIndex !== i ? ' drag-over' : '')}`}
+                            className={`admin-thumb-item${
+                              galleryCategory === 'thumbnails'
+                                ? (thumbDragIndex === i ? ' dragging-thumb' : '')
+                                : (galleryDragIndex === i ? ' dragging-thumb' : '')
+                            }${
+                              galleryCategory === 'thumbnails'
+                                ? (thumbDragOverIndex === i && thumbDragIndex !== i ? ' drag-over' : '')
+                                : (galleryDragOverIndex === i && galleryDragIndex !== i ? ' drag-over' : '')
+                            }`}
                             draggable
                             onDragStart={() => {
                               if (galleryCategory === 'thumbnails') setThumbDragIndex(i)
@@ -723,13 +719,21 @@ export default function AdminPage() {
                             }}
                           >
                             <img src={url} alt={item.label ?? item.name ?? ''} draggable={false} />
-                            {galleryCategory === 'thumbnails'
-                              ? (isStatic
-                                ? <span className="admin-thumb-static-badge">Static</span>
-                                : <button className="admin-thumb-delete" onClick={() => deleteThumbnail(galleryPlatform, i)}>✕</button>
-                              )
-                              : null
-                            }
+                            <button
+                              className="admin-thumb-delete"
+                              onClick={async () => {
+                                if (galleryCategory === 'thumbnails') {
+                                  deleteThumbnail(galleryPlatform, i)
+                                } else {
+                                  const updated = galleryOrder[galleryCategory][galleryPlatform].filter((_, idx) => idx !== i)
+                                  setGalleryOrder(prev => ({
+                                    ...prev,
+                                    [galleryCategory]: { ...prev[galleryCategory], [galleryPlatform]: updated },
+                                  }))
+                                  await saveGalleryItems(galleryCategory, galleryPlatform, updated)
+                                }
+                              }}
+                            >✕</button>
                           </div>
                         )
                       })
