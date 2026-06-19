@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import sentado from '../../assets/images/outros/decoracoes/sentado.png'
 import './ChannelCarousel.css'
+import { loadDecorationAsset } from '../../services/decorations'
+import { STATIC_DECORATION_URLS } from '../../services/staticUrls'
 
 const CHANNELS = [
   {
@@ -253,6 +254,15 @@ function ChannelCarousel() {
 
   const [canLeft, setCanLeft] = useState(false)
   const [canRight, setCanRight] = useState(true)
+  const [sentadoSrc, setSentadoSrc] = useState(STATIC_DECORATION_URLS['outros/decoracoes/sentado.png'] || '')
+
+  useEffect(() => {
+    let active = true
+    loadDecorationAsset('outros/decoracoes/sentado.png').then(src => {
+      if (active && src) setSentadoSrc(src)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [])
 
   function scroll(dir) {
     const track = trackRef.current
@@ -301,7 +311,7 @@ function ChannelCarousel() {
 
   return (
     <section className="cc-section">
-      <img src={sentado} alt="" className="cc-render-left" aria-hidden="true" />
+      <img src={sentadoSrc} alt="" className="cc-render-left" aria-hidden="true" />
       <h2 className="cc-title">
         Content creators I've worked with!
       </h2>

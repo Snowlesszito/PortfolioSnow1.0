@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { db } from '../../firebase'
 import { doc, onSnapshot } from 'firebase/firestore'
-import pintura from '../../assets/images/outros/antesedepois/pintura.png'
+import { loadDecorationAsset } from '../../services/decorations'
 import './CommissionStatus.css'
 
 export default function CommissionStatus() {
   const [data, setData] = useState(null)
+  const [pinturaSrc, setPinturaSrc] = useState('')
 
   useEffect(() => {
     const ref = doc(db, 'commissions', 'status')
@@ -13,6 +14,14 @@ export default function CommissionStatus() {
       if (snap.exists()) setData(snap.data())
     })
     return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    loadDecorationAsset('outros/antesedepois/pintura.png').then(src => {
+      if (active && src) setPinturaSrc(src)
+    }).catch(() => {})
+    return () => { active = false }
   }, [])
 
   if (!data) return null
@@ -27,7 +36,7 @@ export default function CommissionStatus() {
 
   return (
     <section className="cs-section">
-      <img src={pintura} alt="" className="cs-pintura" aria-hidden="true" />
+      <img src={pinturaSrc || ''} alt="" className="cs-pintura" aria-hidden="true" />
       <h2 className="cs-title">Commission Status</h2>
 
       <div className="cs-badge" style={{ background: currentStatus.color, borderColor: currentStatus.accent, boxShadow: `0 6px 28px ${currentStatus.accent}55` }}>

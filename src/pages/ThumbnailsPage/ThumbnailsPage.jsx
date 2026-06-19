@@ -1,96 +1,49 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { db } from '../../firebase'
-import { doc, getDoc } from 'firebase/firestore'
 import '../GalleryPage/GalleryPage.css'
+import { loadGalleryItems } from '../../services/gallery'
+import { STATIC_GALLERY_URLS } from '../../services/staticUrls'
 
-const minecraftModules = import.meta.glob(
-  '../../assets/images/thumbnails/minecraft/*.{jpg,JPG,jpeg,png,PNG}',
-  { eager: true }
-)
-
-const robloxModules = import.meta.glob(
-  '../../assets/images/thumbnails/roblox/*.{jpg,JPG,jpeg,png,PNG}',
-  { eager: true }
-)
-
-// filename → resolved URL maps (for resolving stored static image names)
-const staticNameMap = {
-  minecraft: Object.fromEntries(
-    Object.entries(minecraftModules).map(([p, m]) => [p.split('/').pop(), m.default])
-  ),
-  roblox: Object.fromEntries(
-    Object.entries(robloxModules).map(([p, m]) => [p.split('/').pop(), m.default])
-  ),
-}
-
-// Fallback static lists (used when Firestore has no order saved)
-const staticMinecraft = Object.entries(minecraftModules).map(([path, mod], i) => ({
+const staticMinecraft = Object.entries(STATIC_GALLERY_URLS.thumbnails.minecraft).map(([name, src], i) => ({
   id: `static_mc_${i}`,
-  src: mod.default,
-  label: path.split('/').pop(),
+  src,
+  label: name,
 }))
 
-const staticRoblox = Object.entries(robloxModules).map(([path, mod], i) => ({
+const staticRoblox = Object.entries(STATIC_GALLERY_URLS.thumbnails.roblox).map(([name, src], i) => ({
   id: `static_rb_${i}`,
-  src: mod.default,
-  label: path.split('/').pop(),
+  src,
+  label: name,
 }))
 
 export default function ThumbnailsPage() {
   const [selected, setSelected] = useState(null)
   const [tab, setTab] = useState('minecraft')
-  const [orderedWorks, setOrderedWorks] = useState({ minecraft: null, roblox: null })
+  const [orderedWorks, setOrderedWorks] = useState({ minecraft: staticMinecraft, roblox: staticRoblox })
 
   const navigate = useNavigate()
 
   useEffect(() => {
-    function resolveItemName(item) {
-      return item.name ?? item.label ?? item.path?.split('/').pop() ?? ''
-    }
-
-    function resolveItemSrc(item, nameMap) {
-      if (item.isStatic) {
-        return nameMap[resolveItemName(item)] ?? null
-      }
-      return item.url ?? item.src ?? null
-    }
+    let active = true
 
     async function loadOrder() {
       for (const cat of ['minecraft', 'roblox']) {
-        const snap = await getDoc(doc(db, 'thumbnails', cat))
-        if (!snap.exists()) continue
-
-        const order = snap.data().order ?? snap.data().images?.map(img => ({ ...img, isStatic: false }))
-        if (!order?.length) continue
-
-        const nameMap = staticNameMap[cat]
-        const resolved = order
-          .map((item, i) => ({
-            id: `ordered_${cat}_${i}`,
-            src: resolveItemSrc(item, nameMap),
-            label: resolveItemName(item),
-          }))
-          .filter(w => w.src)
-
-        const savedNames = new Set(order.map(resolveItemName))
-        const extras = Object.entries(nameMap)
-          .filter(([name]) => !savedNames.has(name))
-          .map(([name, src], i) => ({
-            id: `extra_${cat}_${i}`,
-            src,
-            label: name,
-          }))
-
-        setOrderedWorks(prev => ({ ...prev, [cat]: [...resolved, ...extras] }))
+        const items = await loadGalleryItems('thumbnails', cat)
+        if (!active) return
+        const staticList = cat === 'minecraft' ? staticMinecraft : staticRoblox
+        if (items.length >= staticList.length) {
+          setOrderedWorks(prev => ({ ...prev, [cat]: items }))
+        }
       }
     }
     loadOrder()
+
+    return () => { active = false }
   }, [])
 
   const works = tab === 'minecraft'
-    ? (orderedWorks.minecraft ?? staticMinecraft)
-    : (orderedWorks.roblox ?? staticRoblox)
+    ? orderedWorks.minecraft
+    : orderedWorks.roblox
 
   return (
     <div className="gallery-page">

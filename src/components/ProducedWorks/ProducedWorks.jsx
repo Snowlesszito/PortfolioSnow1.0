@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import './ProducedWorks.css'
+import { STATIC_GALLERY_URLS } from '../../services/staticUrls'
 
-const imageModules = import.meta.glob(
-  '../assets/images/{thumbnails,Keyart,promocionais}/minecraft/*.{jpg,JPG,jpeg,png,webp,PNG}',
-  { eager: true }
-)
-
-const works = Object.entries(imageModules).map(([path, mod], i) => ({
+const works = [
+  ...Object.entries(STATIC_GALLERY_URLS.thumbnails.minecraft),
+  ...Object.entries(STATIC_GALLERY_URLS.keyarts.minecraft),
+  ...Object.entries(STATIC_GALLERY_URLS.promocional.minecraft),
+].map(([name, src], i) => ({
   id: i,
-  src: mod.default,
-  label: path.split('/').pop(),
+  src,
+  label: name,
 }))
 
 const PAGE_SIZE = 10

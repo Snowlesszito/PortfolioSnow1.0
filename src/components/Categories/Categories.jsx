@@ -1,41 +1,40 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Categories.css'
+import { loadGalleryItems, getStaticGalleryItems } from '../../services/gallery'
 
-const thumbModules = import.meta.glob(
-  '../../assets/images/thumbnails/**/*.{jpg,JPG,jpeg,png,PNG}',
-  { eager: true }
-)
-const keyModules = import.meta.glob(
-  '../../assets/images/keyart/**/*.{jpg,JPG,jpeg,png,PNG}',
-  { eager: true }
-)
-const promoModules = import.meta.glob(
-  '../../assets/images/promocionais/**/*.{jpg,JPG,jpeg,png,PNG}',
-  { eager: true }
-)
-
-const profileModules = import.meta.glob(
-  '../../assets/images/profile/**/*.{jpg,JPG,jpeg,png,PNG}',
-  { eager: true }
-)
-
-const thumbs = Object.values(thumbModules).map(m => m.default)
-const keys = Object.values(keyModules).map(m => m.default)
-const promos = Object.values(promoModules).map(m => m.default)
-const profiles = Object.values(profileModules).map(m => m.default)
 const categories = [
-  { title: 'Thumbnails', description: 'Minecraft thumbnails for YouTube videos.', images: thumbs, path: '/thumbnails' },
-  { title: 'KEYART', description: 'Minecraft key art for Marketplace addons.', images: keys, path: '/keyarts' },
-  { title: 'Promotional', description: 'Special occasion artwork, wallpapers and more.', images: promos, path: '/promocional' },
-  { title: 'Profiles', description: 'Profile pictures for various Minecraft characters.', images: profiles, path: '/profiles' },
+  { title: 'Thumbnails', description: 'Minecraft thumbnails for YouTube videos.', category: 'thumbnails', path: '/thumbnails' },
+  { title: 'KEYART', description: 'Minecraft key art for Marketplace addons.', category: 'keyarts', path: '/keyarts' },
+  { title: 'Promotional', description: 'Special occasion artwork, wallpapers and more.', category: 'promocional', path: '/promocional' },
+  { title: 'Profiles', description: 'Profile pictures for various Minecraft characters.', category: 'profiles', path: '/profiles' },
 ]
 
-function CategoryCard({ title, description, images, path }) {
+const initialPreviews = Object.fromEntries(
+  categories.map(cat => [
+    cat.category,
+    getStaticGalleryItems(cat.category),
+  ])
+)
+
+function CategoryCard({ title, description, category, path }) {
   const navigate = useNavigate()
+  const [images, setImages] = useState(initialPreviews[category].slice(0, 4).map(item => item.src))
+  const [totalCount, setTotalCount] = useState(initialPreviews[category].length)
   const [current, setCurrent] = useState(0)
   const [prev, setPrev] = useState(null)
   const [fading, setFading] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    loadGalleryItems(category).then(items => {
+      if (!active) return
+      const finalItems = items.length >= initialPreviews[category].length ? items : initialPreviews[category]
+      setImages(finalItems.slice(0, 4).map(item => item.src))
+      setTotalCount(finalItems.length)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [category])
 
   useEffect(() => {
     if (images.length === 0) return
@@ -63,7 +62,7 @@ function CategoryCard({ title, description, images, path }) {
             />
           )}
           <img
-            src={images[current]}
+            src={images[current] || ''}
             alt={title}
             className={`cat-img ${fading ? 'cat-img-in' : ''}`}
           />
@@ -71,7 +70,7 @@ function CategoryCard({ title, description, images, path }) {
             <h3 className="cat-title">{title}</h3>
             <p className="cat-desc">{description}</p>
           </div>
-          <span className="cat-badge">{images.length}</span>
+          <span className="cat-badge">{totalCount}</span>
         </div>
         <span className="cat-corner cat-tl" />
         <span className="cat-corner cat-tr" />

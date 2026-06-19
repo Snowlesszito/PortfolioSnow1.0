@@ -1,9 +1,24 @@
 import './BeforeAfter.css'
-
-import before from '../../assets/images/outros/antesedepois/antes.jpg'
-import after from '../../assets/images/outros/antesedepois/depois.jpg'
+import { useEffect, useState } from 'react'
+import { loadDecorationAsset } from '../../services/decorations'
 
 function BeforeAfter() {
+  const [beforeSrc, setBeforeSrc] = useState('')
+  const [afterSrc, setAfterSrc] = useState('')
+
+  useEffect(() => {
+    let active = true
+    Promise.all([
+      loadDecorationAsset('outros/antesedepois/antes.jpg'),
+      loadDecorationAsset('outros/antesedepois/depois.jpg'),
+    ]).then(([beforeUrl, afterUrl]) => {
+      if (!active) return
+      setBeforeSrc(beforeUrl)
+      setAfterSrc(afterUrl)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [])
+
   return (
     <section className="ba-section">
       <h2 className="ba-title">Before & After</h2>
@@ -11,7 +26,7 @@ function BeforeAfter() {
       <div className="ba-row">
         <div className="ba-panel">
           <div className="ba-panel-media">
-            <img src={before} alt="Before" />
+            <img src={beforeSrc || ''} alt="Before" />
           </div>
           <span className="ba-panel-label">Before</span>
         </div>
@@ -41,7 +56,7 @@ function BeforeAfter() {
 
         <div className="ba-panel">
           <div className="ba-panel-media">
-            <img src={after} alt="After" />
+            <img src={afterSrc || ''} alt="After" />
           </div>
           <span className="ba-panel-label">After</span>
         </div>

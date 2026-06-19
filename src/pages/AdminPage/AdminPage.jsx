@@ -4,27 +4,13 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { ref as sRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { signOut } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
+import { loadGalleryItems, saveGalleryItems } from '../../services/gallery'
+import { STATIC_GALLERY_URLS } from '../../services/staticUrls'
 import './AdminPage.css'
 
-// Static thumbnail maps: filename → resolved URL (build-time)
-const staticThumbMods = {
-  minecraft: import.meta.glob(
-    '../../assets/images/thumbnails/minecraft/*.{jpg,JPG,jpeg,png,PNG}',
-    { eager: true }
-  ),
-  roblox: import.meta.glob(
-    '../../assets/images/thumbnails/roblox/*.{jpg,JPG,jpeg,png,PNG}',
-    { eager: true }
-  ),
-}
-
 const staticThumbMap = {
-  minecraft: Object.fromEntries(
-    Object.entries(staticThumbMods.minecraft).map(([p, m]) => [p.split('/').pop(), m.default])
-  ),
-  roblox: Object.fromEntries(
-    Object.entries(staticThumbMods.roblox).map(([p, m]) => [p.split('/').pop(), m.default])
-  ),
+  minecraft: STATIC_GALLERY_URLS.thumbnails.minecraft,
+  roblox: STATIC_GALLERY_URLS.thumbnails.roblox,
 }
 
 // Compress image to max 1920×1080, output JPEG at given quality
@@ -85,6 +71,15 @@ const INITIAL_STATE = {
   clients: [],
 }
 
+const GALLERY_CATEGORIES = ['thumbnails', 'keyarts', 'promocional', 'profiles']
+const GALLERY_CATEGORY_LABELS = {
+  thumbnails: 'Thumbnails',
+  keyarts: 'Key Arts',
+  promocional: 'Promocionais',
+  profiles: 'Profiles',
+}
+const GALLERY_PLATFORMS = ['minecraft', 'roblox']
+
 const UPLOAD_LIMIT = 10
 const UPLOAD_COOLDOWN = 60 * 60 * 1000
 
@@ -120,7 +115,6 @@ export default function AdminPage() {
   const [dragging, setDragging] = useState(null)
 
   // ── Thumbnails ──
-  const [thumbCategory, setThumbCategory] = useState('minecraft')
   const [thumbOrder, setThumbOrder] = useState({ minecraft: [], roblox: [] })
   const [thumbUploading, setThumbUploading] = useState(false)
   const [thumbError, setThumbError] = useState('')
@@ -128,6 +122,20 @@ export default function AdminPage() {
   const [thumbCooldown, setThumbCooldown] = useState(0)
   const [thumbDragIndex, setThumbDragIndex] = useState(null)
   const [thumbDragOverIndex, setThumbDragOverIndex] = useState(null)
+  const [newImageUrl, setNewImageUrl] = useState('')
+  const [newImageError, setNewImageError] = useState('')
+  const [newImageSuccess, setNewImageSuccess] = useState('')
+  const [galleryCategory, setGalleryCategory] = useState('thumbnails')
+  const [galleryPlatform, setGalleryPlatform] = useState('minecraft')
+  const [galleryOrder, setGalleryOrder] = useState({
+    keyarts: { minecraft: [], roblox: [] },
+    promocional: { minecraft: [], roblox: [] },
+    profiles: { minecraft: [], roblox: [] },
+  })
+  const [galleryLoading, setGalleryLoading] = useState(true)
+  const [galleryError, setGalleryError] = useState('')
+  const [galleryDragIndex, setGalleryDragIndex] = useState(null)
+  const [galleryDragOverIndex, setGalleryDragOverIndex] = useState(null)
   const thumbFileRef = useRef(null)
   const cooldownRef = useRef(null)
 
@@ -160,6 +168,28 @@ export default function AdminPage() {
       }
     }
     loadThumbs()
+  }, [])
+
+  // ── Load gallery categories ──
+  useEffect(() => {
+    async function loadGallery() {
+      try {
+        const loaded = {}
+        for (const category of ['keyarts', 'promocional', 'profiles']) {
+          loaded[category] = {}
+          for (const platform of ['minecraft', 'roblox']) {
+            loaded[category][platform] = await loadGalleryItems(category, platform)
+          }
+        }
+        setGalleryOrder(prev => ({ ...prev, ...loaded }))
+      } catch (error) {
+        console.warn('[admin] failed to load gallery categories', error)
+        setGalleryError('Falha ao carregar as categorias de galeria.')
+      } finally {
+        setGalleryLoading(false)
+      }
+    }
+    loadGallery()
   }, [])
 
   // ── Cooldown timer ──
@@ -301,16 +331,16 @@ export default function AdminPage() {
         totalCompressed += blob.size
 
         const baseName = file.name.replace(/\.[^.]+$/, '') + '.jpg'
-        const path = `thumbnails/${thumbCategory}/${Date.now()}_${baseName}`
+        const path = `thumbnails/${galleryPlatform}/${Date.now()}_${baseName}`
         const fileRef = sRef(storage, path)
         await uploadBytes(fileRef, blob)
         const url = await getDownloadURL(fileRef)
         newImages.push({ url, name: baseName, path, isStatic: false })
       }
 
-      const newOrder = [...thumbOrder[thumbCategory], ...newImages]
-      await setDoc(doc(db, 'thumbnails', thumbCategory), { order: newOrder }, { merge: true })
-      setThumbOrder(prev => ({ ...prev, [thumbCategory]: newOrder }))
+      const newOrder = [...thumbOrder[galleryPlatform], ...newImages]
+      await setDoc(doc(db, 'thumbnails', galleryPlatform), { order: newOrder }, { merge: true })
+      setThumbOrder(prev => ({ ...prev, [galleryPlatform]: newOrder }))
       localStorage.setItem('adminLastUpload', Date.now().toString())
       startCooldownTimer()
 
@@ -338,6 +368,58 @@ export default function AdminPage() {
     setThumbOrder(prev => ({ ...prev, [cat]: newOrder }))
   }
 
+  function validateImageUrl(url) {
+    if (!url || typeof url !== 'string') return 'Informe uma URL de imagem válida.'
+    const trimmed = url.trim()
+    if (!/^https?:\/\//i.test(trimmed)) return 'A URL deve começar com http:// ou https://.'
+    if (!/\.(jpe?g|png|webp|gif|avif|svg)(\?.*)?$/i.test(trimmed)) return 'Use uma URL de imagem terminando em jpg, png, webp, gif, avif ou svg.'
+    return ''
+  }
+
+  async function addImageUrl() {
+    const url = newImageUrl.trim()
+    const error = validateImageUrl(url)
+    if (error) {
+      setNewImageError(error)
+      setNewImageSuccess('')
+      return
+    }
+
+    setNewImageError('')
+    setNewImageSuccess('')
+
+    const fileName = url.split('/').pop().split('?')[0] || `image-${Date.now()}`
+    const newItem = {
+      url,
+      name: fileName,
+      label: fileName,
+      isStatic: false,
+    }
+
+    try {
+      if (galleryCategory === 'thumbnails') {
+        const updated = [...thumbOrder[galleryPlatform], newItem]
+        await setDoc(doc(db, 'thumbnails', galleryPlatform), { order: updated }, { merge: true })
+        setThumbOrder(prev => ({ ...prev, [galleryPlatform]: updated }))
+      } else {
+        const updated = [...(galleryOrder[galleryCategory]?.[galleryPlatform] || []), newItem]
+        setGalleryOrder(prev => ({
+          ...prev,
+          [galleryCategory]: {
+            ...prev[galleryCategory],
+            [galleryPlatform]: updated,
+          },
+        }))
+        await saveGalleryItems(galleryCategory, galleryPlatform, updated)
+      }
+      setNewImageUrl('')
+      setNewImageSuccess('Imagem adicionada com sucesso.')
+    } catch (err) {
+      console.error('[admin] addImageUrl failed', err)
+      setNewImageError('Falha ao adicionar a imagem. Tente novamente.')
+    }
+  }
+
   async function reorderThumbnails(cat, fromIndex, toIndex) {
     if (fromIndex === toIndex) return
     const list = [...thumbOrder[cat]]
@@ -345,6 +427,21 @@ export default function AdminPage() {
     list.splice(toIndex, 0, moved)
     setThumbOrder(prev => ({ ...prev, [cat]: list }))
     await setDoc(doc(db, 'thumbnails', cat), { order: list }, { merge: true })
+  }
+
+  async function reorderGalleryItems(category, platform, fromIndex, toIndex) {
+    if (fromIndex === toIndex) return
+    const list = [...galleryOrder[category][platform]]
+    const [moved] = list.splice(fromIndex, 1)
+    list.splice(toIndex, 0, moved)
+    setGalleryOrder(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [platform]: list,
+      },
+    }))
+    await saveGalleryItems(category, platform, list)
   }
 
   // ── Render ──
@@ -505,73 +602,138 @@ export default function AdminPage() {
             </div>
 
             <div className="admin-section">
-              <h2>Thumbnails</h2>
+              <h2>Galeria</h2>
 
               <div className="admin-thumb-tabs">
-                {['minecraft', 'roblox'].map(cat => (
+                {GALLERY_CATEGORIES.map(cat => (
                   <button
                     key={cat}
-                    className={`admin-status-btn ${thumbCategory === cat ? 'active' : ''}`}
-                    onClick={() => setThumbCategory(cat)}
+                    className={`admin-status-btn ${galleryCategory === cat ? 'active' : ''}`}
+                    onClick={() => setGalleryCategory(cat)}
                   >
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    {GALLERY_CATEGORY_LABELS[cat] ?? cat}
                   </button>
                 ))}
               </div>
 
-              <label className={`admin-thumb-label ${thumbUploading || thumbCooldown > 0 ? 'disabled' : ''}`}>
-                {thumbUploading
-                  ? 'Enviando...'
-                  : thumbCooldown > 0
-                    ? `Cooldown: ${formatCooldown(thumbCooldown)}`
-                    : `Adicionar imagens a ${thumbCategory} (máx. ${UPLOAD_LIMIT}, até 20MB cada)`}
-                <input
-                  type="file"
-                  multiple
-                  accept="image/jpeg,image/jpg,image/png"
-                  ref={thumbFileRef}
-                  onChange={uploadThumbnails}
-                  disabled={thumbUploading || thumbCooldown > 0}
-                  style={{ display: 'none' }}
-                />
-              </label>
+              <div className="admin-thumb-tabs">
+                {GALLERY_PLATFORMS.map(platform => (
+                  <button
+                    key={platform}
+                    className={`admin-status-btn ${galleryPlatform === platform ? 'active' : ''}`}
+                    onClick={() => setGalleryPlatform(platform)}
+                  >
+                    {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                  </button>
+                ))}
+              </div>
 
-              {thumbError && <p className="admin-error">{thumbError}</p>}
-              {thumbSuccess && <p className="admin-success">{thumbSuccess}</p>}
+              {galleryCategory === 'thumbnails' && (
+                <label className={`admin-thumb-label ${thumbUploading || thumbCooldown > 0 ? 'disabled' : ''}`}>
+                  {thumbUploading
+                    ? 'Enviando...'
+                    : thumbCooldown > 0
+                      ? `Cooldown: ${formatCooldown(thumbCooldown)}`
+                      : `Adicionar imagens a ${galleryPlatform} (máx. ${UPLOAD_LIMIT}, até 20MB cada)`}
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/jpg,image/png"
+                    ref={thumbFileRef}
+                    onChange={uploadThumbnails}
+                    disabled={thumbUploading || thumbCooldown > 0}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              )}
+
+              {galleryError && <p className="admin-error">{galleryError}</p>}
+              {thumbError && galleryCategory === 'thumbnails' && <p className="admin-error">{thumbError}</p>}
+              {thumbSuccess && galleryCategory === 'thumbnails' && <p className="admin-success">{thumbSuccess}</p>}
+
+              <div className="admin-section admin-url-input-section">
+                <h3>Adicionar imagem via URL</h3>
+                <div className="admin-url-input-row">
+                  <input
+                    type="url"
+                    placeholder="Cole a URL da imagem aqui"
+                    value={newImageUrl}
+                    onChange={e => { setNewImageUrl(e.target.value); if (newImageError) setNewImageError(''); if (newImageSuccess) setNewImageSuccess('') }}
+                    onKeyDown={e => e.key === 'Enter' && addImageUrl()}
+                  />
+                  <button onClick={addImageUrl}>Adicionar URL</button>
+                </div>
+                {newImageError && <p className="admin-error">{newImageError}</p>}
+                {newImageSuccess && <p className="admin-success">{newImageSuccess}</p>}
+              </div>
 
               <p className="admin-info-text">
-                Arraste para reordenar. Imagens <strong>estáticas</strong> não podem ser deletadas aqui.
+                Arraste para reordenar as imagens. Para categorias estáticas, edição deve ser feita diretamente nas fontes ou no Firestore.
               </p>
 
               <div className="admin-thumb-grid">
-                {thumbOrder[thumbCategory].length === 0
-                  ? <p className="admin-info-text">Nenhuma thumbnail encontrada.</p>
-                  : thumbOrder[thumbCategory].map((item, i) => {
-                      const url = resolveThumbUrl(item, thumbCategory)
-                      if (!url) return null
-                      return (
-                        <div
-                          key={i}
-                          className={`admin-thumb-item${thumbDragIndex === i ? ' dragging-thumb' : ''}${thumbDragOverIndex === i && thumbDragIndex !== i ? ' drag-over' : ''}`}
-                          draggable
-                          onDragStart={() => setThumbDragIndex(i)}
-                          onDragOver={e => { e.preventDefault(); setThumbDragOverIndex(i) }}
-                          onDrop={() => {
-                            if (thumbDragIndex !== null) reorderThumbnails(thumbCategory, thumbDragIndex, i)
-                            setThumbDragIndex(null)
-                            setThumbDragOverIndex(null)
-                          }}
-                          onDragEnd={() => { setThumbDragIndex(null); setThumbDragOverIndex(null) }}
-                        >
-                          <img src={url} alt={item.name} draggable={false} />
-                          {item.isStatic
-                            ? <span className="admin-thumb-static-badge">Static</span>
-                            : <button className="admin-thumb-delete" onClick={() => deleteThumbnail(thumbCategory, i)}>✕</button>
-                          }
-                        </div>
-                      )
-                    })
-                }
+                {galleryLoading && <p className="admin-info-text">Carregando galeria…</p>}
+                {!galleryLoading && (() => {
+                  const items = galleryCategory === 'thumbnails'
+                    ? thumbOrder[galleryPlatform]
+                    : galleryOrder[galleryCategory]?.[galleryPlatform] ?? []
+
+                  return items.length === 0
+                    ? <p className="admin-info-text">Nenhuma imagem encontrada.</p>
+                    : items.map((item, i) => {
+                        const url = galleryCategory === 'thumbnails'
+                          ? resolveThumbUrl(item, galleryPlatform)
+                          : item.src
+                        if (!url) return null
+                        const isStatic = galleryCategory === 'thumbnails' ? item.isStatic : false
+
+                        return (
+                          <div
+                            key={item.id ?? i}
+                            className={`admin-thumb-item${galleryCategory === 'thumbnails' ? (thumbDragIndex === i ? ' dragging-thumb' : '') : (galleryDragIndex === i ? ' dragging-thumb' : '')}${galleryCategory === 'thumbnails' ? (thumbDragOverIndex === i && thumbDragIndex !== i ? ' drag-over' : '') : (galleryDragOverIndex === i && galleryDragIndex !== i ? ' drag-over' : '')}`}
+                            draggable
+                            onDragStart={() => {
+                              if (galleryCategory === 'thumbnails') setThumbDragIndex(i)
+                              else setGalleryDragIndex(i)
+                            }}
+                            onDragOver={e => {
+                              e.preventDefault()
+                              if (galleryCategory === 'thumbnails') setThumbDragOverIndex(i)
+                              else setGalleryDragOverIndex(i)
+                            }}
+                            onDrop={() => {
+                              if (galleryCategory === 'thumbnails') {
+                                if (thumbDragIndex !== null) reorderThumbnails(galleryPlatform, thumbDragIndex, i)
+                                setThumbDragIndex(null)
+                                setThumbDragOverIndex(null)
+                              } else {
+                                if (galleryDragIndex !== null) reorderGalleryItems(galleryCategory, galleryPlatform, galleryDragIndex, i)
+                                setGalleryDragIndex(null)
+                                setGalleryDragOverIndex(null)
+                              }
+                            }}
+                            onDragEnd={() => {
+                              if (galleryCategory === 'thumbnails') {
+                                setThumbDragIndex(null)
+                                setThumbDragOverIndex(null)
+                              } else {
+                                setGalleryDragIndex(null)
+                                setGalleryDragOverIndex(null)
+                              }
+                            }}
+                          >
+                            <img src={url} alt={item.label ?? item.name ?? ''} draggable={false} />
+                            {galleryCategory === 'thumbnails'
+                              ? (isStatic
+                                ? <span className="admin-thumb-static-badge">Static</span>
+                                : <button className="admin-thumb-delete" onClick={() => deleteThumbnail(galleryPlatform, i)}>✕</button>
+                              )
+                              : null
+                            }
+                          </div>
+                        )
+                      })
+                })()}
               </div>
             </div>
           </div>

@@ -3,14 +3,14 @@ import { useNavigate, Link } from 'react-router-dom'
 import { db } from '../../firebase'
 import { doc, onSnapshot } from 'firebase/firestore'
 import './About.css'
-
-// import skin from '../assets/images/outros/skin.png'
-import skin from '../../assets/images/outros/about/perfil.jpg'
+import { loadDecorationAsset } from '../../services/decorations'
+import { STATIC_DECORATION_URLS } from '../../services/staticUrls'
 
 function About() {
   const navigate = useNavigate()
   const [stats, setStats] = useState({ clientsCount: 15, completedCount: 40 })
   const [loadedStats, setLoadedStats] = useState(false)
+  const [skinSrc, setSkinSrc] = useState(STATIC_DECORATION_URLS['outros/decoracoes/Perfil_About.png'] || '')
 
   useEffect(() => {
     const ref = doc(db, 'commissions', 'status')
@@ -28,6 +28,14 @@ function About() {
     return () => unsubscribe()
   }, [])
 
+  useEffect(() => {
+    let active = true
+    loadDecorationAsset('outros/decoracoes/Perfil_About.png').then(src => {
+      if (active && src) setSkinSrc(src)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [])
+
   const clientsCount = loadedStats ? stats.clientsCount : 15
   const completedCount = loadedStats ? stats.completedCount : 40
 
@@ -35,7 +43,7 @@ function About() {
     <section className="about-section">
       <div className="about-split">
         <div className="about-split-left">
-          <img src={skin} alt="Snowless Skin" className="about-split-img" />
+          <img src={skinSrc || ''} alt="Snowless Skin" className="about-split-img" />
         </div>
 
         <div className="about-split-right">
@@ -77,7 +85,7 @@ function About() {
             </div>
             <div className="acc-info">
               <span className="acc-name">Discord</span>
-              <span className="acc-handle">Direct message</span>
+              <span className="acc-handle">Direct message @ssnowlesss</span>
             </div>
             <span className="acc-arrow">→</span>
           </a>

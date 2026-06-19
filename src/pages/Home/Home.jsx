@@ -1,6 +1,5 @@
-import { useLayoutEffect } from 'react'
+import { useLayoutEffect, useEffect, useState } from 'react'
 import './Home.css'
-import banner from '../../assets/images/banner/Banner.png'
 import BeforeAfter from '../../components/BeforeAfter/BeforeAfter'
 import HowItWorks from '../../components/HowItWorks/HowItWorks'
 import About from '../../components/About/About'
@@ -8,13 +7,43 @@ import Categories from '../../components/Categories/Categories'
 import '../../App.css'
 import CommissionStatus from '../../components/CommissionStatus/CommissionStatus'
 import ChannelCarousel from '../../components/ChannelCarousel/ChannelCarousel'
+import { loadGalleryItems, getStaticGalleryItems } from '../../services/gallery'
+import { loadDecorationAsset } from '../../services/decorations'
 
-const slideModules = import.meta.glob(
-  '../../assets/images/banner/images/*.{jpg,JPG,jpeg,png,PNG,webp}',
-  { eager: true }
-)
-const images = Object.values(slideModules).map(m => m.default)
+const defaultImages = [
+  ...getStaticGalleryItems('thumbnails', 'minecraft'),
+  ...getStaticGalleryItems('thumbnails', 'roblox'),
+].map(item => item.src)
 function Home() {
+  const [images, setImages] = useState(defaultImages)
+  const [logoSrc, setLogoSrc] = useState('')
+
+  useEffect(() => {
+    let active = true
+
+    async function loadThumbnails() {
+      const [minecraft, roblox] = await Promise.all([
+        loadGalleryItems('thumbnails', 'minecraft'),
+        loadGalleryItems('thumbnails', 'roblox'),
+      ])
+      if (!active) return
+      const thumbImages = [...minecraft, ...roblox].map(item => item.src).filter(Boolean)
+      if (thumbImages.length >= defaultImages.length) {
+        setImages(thumbImages)
+      }
+    }
+
+    loadThumbnails()
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    loadDecorationAsset('banner/Banner.png').then(src => {
+      if (active && src) setLogoSrc(src)
+    }).catch(() => {})
+    return () => { active = false }
+  }, [])
   useLayoutEffect(() => {
     const y = sessionStorage.getItem('homeScrollY')
     if (y !== null) {
@@ -46,7 +75,10 @@ function Home() {
         <div className="hero-overlay" />
 
         <div className="hero-content">
-          <img src={banner} alt="Snowless" className="logo" />
+          {logoSrc
+            ? <img src={logoSrc} alt="Snowless" className="logo" />
+            : <h1 className="logo">Snowless</h1>
+          }
           <button
             className="hero-cta"
             onClick={() => document.querySelector('.categories-section')?.scrollIntoView({ behavior: 'smooth' })}

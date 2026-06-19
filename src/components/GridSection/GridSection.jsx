@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import './GridSection.css'
-import img1 from '../../assets/images/keyart/minecraft/Key1.jpg'
-import img2 from '../../assets/images/promocionais/minecraft/Promo1.jpg'
-
-// Adicione suas imagens aqui
-// import img1 from '../assets/images/...'
+import { STATIC_GALLERY_URLS } from '../../services/staticUrls'
 
 const works = [
-  // { id: 1, src: img1, label: 'Nome da arte' },
-  { id: 1, src: img1, label: 'Key Art 1' },
-  { id: 2, src: img2, label: 'Promo 1' },
+  {
+    id: 1,
+    src: STATIC_GALLERY_URLS.keyarts.minecraft['Key1.jpg'] || '',
+    label: 'Key Art 1',
+  },
+  {
+    id: 2,
+    src: STATIC_GALLERY_URLS.promocional.minecraft['Promo1.jpg'] || '',
+    label: 'Promo 1',
+  },
 ]
 
 function GridSection() {

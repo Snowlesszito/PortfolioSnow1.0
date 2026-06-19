@@ -1,19 +1,23 @@
 import '../GalleryPage/GalleryPage.css'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { loadGalleryItems, getStaticGalleryItems } from '../../services/gallery'
 
-const imageModules = import.meta.glob(
-  '../../assets/images/keyart/**/*.{jpg,JPG,jpeg,png,webp,PNG}',
-  { eager: true }
-)
-
-const works = Object.entries(imageModules).map(([path, mod], i) => ({
-  id: i, src: mod.default, label: path.split('/').pop(),
-}))
+const initialWorks = getStaticGalleryItems('keyarts')
 
 export default function KeyArtsPage() {
+  const [works, setWorks] = useState(initialWorks)
   const [selected, setSelected] = useState(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    let active = true
+    loadGalleryItems('keyarts').then(items => {
+      if (!active) return
+      if (items.length) setWorks(items)
+    })
+    return () => { active = false }
+  }, [])
 
   return (
     <div className="gallery-page">
