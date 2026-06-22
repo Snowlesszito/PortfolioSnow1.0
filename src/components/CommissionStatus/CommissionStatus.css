@@ -123,8 +123,6 @@
 
 .cs-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 14px 36px rgba(102, 164, 219, 0.18);
-  border-color: rgba(102, 164, 219, 0.45);
 }
 
 .cs-card:hover::before {

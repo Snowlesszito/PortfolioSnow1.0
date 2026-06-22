@@ -20,7 +20,7 @@ function App() {
       setTimeout(() => el.remove(), 500)
     }
 
-    const minDelay = new Promise(res => setTimeout(res, 800))
+    const minDelay = new Promise(res => setTimeout(res, 300))
     const pageLoad = new Promise(res => {
       if (document.readyState === 'complete') res()
       else window.addEventListener('load', res, { once: true })
