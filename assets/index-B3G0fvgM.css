@@ -776,25 +776,6 @@
   background: rgba(255, 255, 255, 0.92);
 }
 
-.about-contact-card.discord:hover {
-  border-color: rgba(88, 101, 242, 0.45);
-  box-shadow: 0 8px 24px rgba(88, 101, 242, 0.12);
-}
-
-.about-contact-card.ytb-jobs:hover {
-  border-color: rgba(255, 68, 68, 0.45);
-  box-shadow: 0 8px 24px rgba(255, 68, 68, 0.12);
-}
-
-.about-contact-card.ytb-canal:hover {
-  border-color: rgba(255, 0, 0, 0.45);
-  box-shadow: 0 8px 24px rgba(255, 0, 0, 0.12);
-}
-
-.about-contact-card.twitter:hover {
-  border-color: rgba(0, 0, 0, 0.25);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
 
 .acc-icon {
   width: 40px;
@@ -858,10 +839,6 @@
   transition: box-shadow 0.2s, background 0.2s;
 }
 
-.about-tos-strip:hover {
-  background: rgba(102, 164, 219, 0.12);
-  box-shadow: 0 4px 18px rgba(102, 164, 219, 0.12);
-}
 
 .about-tos-strip-icon {
   color: #66a4db;
@@ -1704,8 +1681,6 @@ button, input, textarea, select {
 
 .cs-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 14px 36px rgba(102, 164, 219, 0.18);
-  border-color: rgba(102, 164, 219, 0.45);
 }
 
 .cs-card:hover::before {
