@@ -9,9 +9,17 @@ import TosPage from './pages/TosPage/TosPage'
 import AdminPage from './pages/AdminPage/AdminPage'
 import AdminLoginPage from './pages/AdminLoginPage/AdminLoginPage'
 import RequireAuth from './components/RequireAuth/RequireAuth'
+import NotFoundPage from './pages/NotFoundPage/NotFoundPage'
 
 function App() {
   useEffect(() => {
+   
+    const params = new URLSearchParams(window.location.search)
+    const redirectPath = params.get('p')
+    if (redirectPath) {
+      window.history.replaceState(null, '', redirectPath)
+    }
+
     const el = document.getElementById('loading-screen')
     if (!el) return
 
@@ -47,6 +55,7 @@ function App() {
         <Route path="/profiles" element={<ProfilePage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin" element={<RequireAuth><AdminPage /></RequireAuth>} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
   )
