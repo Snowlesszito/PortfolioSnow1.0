@@ -3399,4 +3399,116 @@ button, input, textarea, select {
 .admin-channel-body {
   padding: 1rem;
   border-top: 1px solid rgba(102, 164, 219, 0.12);
+}.nf-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.nf-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(102, 164, 219, 0.18);
+  border-radius: 18px;
+  padding: 3.5rem 4rem;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(102, 164, 219, 0.08);
+}
+
+.nf-code {
+  font-size: 5rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: rgba(102, 164, 219, 0.25);
+  line-height: 1;
+  user-select: none;
+}
+
+.nf-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #66a4db;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.nf-title::before {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #66a4db);
+  flex-shrink: 0;
+}
+
+.nf-title::after {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 2px;
+  background: linear-gradient(90deg, #66a4db, transparent);
+  flex-shrink: 0;
+}
+
+.nf-subtitle {
+  color: #4a5568;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-top: 0.25rem;
+}
+
+.nf-btn {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(102, 164, 219, 0.07);
+  border: 1.5px solid rgba(102, 164, 219, 0.4);
+  color: #66a4db;
+  padding: 0.65rem 1.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: background 0.22s, border-color 0.22s, transform 0.22s, box-shadow 0.22s;
+}
+
+.nf-btn:hover {
+  background: rgba(102, 164, 219, 0.15);
+  transform: translateX(-4px);
+}
+
+@media (max-width: 480px) {
+  .nf-card {
+    padding: 2.5rem 1.5rem;
+  }
+
+  .nf-code {
+    font-size: 3.5rem;
+  }
+
+  .nf-title {
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    gap: 0.5rem;
+  }
+
+  .nf-title::before,
+  .nf-title::after {
+    width: 20px;
+  }
 }
