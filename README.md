@@ -1,0 +1,14 @@
+Portfolio for my projects!
+
+Created using my basic knowledge + AI.
+
+
+
+
+
+
+
+
+
+
+I hope one day I'll have enough money to pay someone to do this...

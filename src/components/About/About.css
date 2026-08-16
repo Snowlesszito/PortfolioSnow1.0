@@ -1,0 +1,337 @@
+.about-section {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  background: transparent;
+}
+
+/* Split layout */
+.about-split {
+  display: flex;
+  width: 100%;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(31, 68, 124, 0.13);
+  border: 1px solid rgba(102, 164, 219, 0.2);
+  min-height: 400px;
+}
+
+.about-split-left {
+  width: 36%;
+  background: linear-gradient(160deg, #5c97ce 0%, #3c77ae 55%, #2c5d94 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+  overflow: hidden;
+}
+
+.about-split-img {
+  width: 80%;
+  max-width: 300px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  image-rendering: auto;
+  display: block;
+  border: 10px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12), 0 16px 40px rgba(0, 0, 0, 0.25);
+}
+
+.about-split-right {
+  flex: 1;
+  padding: 3rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2rem;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(12px);
+}
+
+.about-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.about-name {
+  font-size: clamp(2.8rem, 3.5vw, 4.2rem);
+  font-weight: 800;
+  color: #66a4db;
+  letter-spacing: -0.02em;
+}
+
+.about-bio {
+  font-size: 1.1rem;
+  color: #24355e;
+  line-height: 1.85;
+}
+
+.about-stats {
+  display: flex;
+  align-items: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(102, 164, 219, 0.18);
+}
+
+.about-stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.about-stat-divider {
+  width: 1px;
+  height: 44px;
+  background: rgba(102, 164, 219, 0.22);
+  margin: 0 1.75rem;
+  flex-shrink: 0;
+}
+
+.about-stat-number {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #66a4db;
+  line-height: 1;
+}
+
+.about-stat-label {
+  font-size: 0.68rem;
+  color: #8ab4d8;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Contact section */
+
+.about-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  border: 1.5px solid rgba(102, 164, 219, 0.22);
+  border-radius: 22px;
+  padding: 1.75rem 2rem;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+}
+
+.about-contact-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #66a4db;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin: 0 0 0.15rem;
+}
+
+.about-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.7rem;
+}
+
+.about-contact-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  text-decoration: none;
+  border: 1.5px solid rgba(102, 164, 219, 0.13);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s, background 0.22s;
+}
+
+.about-contact-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+
+.acc-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.acc-icon.discord  { background: #5865F2; box-shadow: 0 3px 10px rgba(88, 101, 242, 0.38); }
+.acc-icon.ytb-jobs { background: #ff4444; box-shadow: 0 3px 10px rgba(255, 68, 68, 0.38); }
+.acc-icon.ytb-canal { background: #ff0000; box-shadow: 0 3px 10px rgba(255, 0, 0, 0.35); }
+.acc-icon.twitter  { background: #000; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28); }
+
+.acc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.acc-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1a2a4a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acc-handle {
+  font-size: 0.73rem;
+  color: #94a3b8;
+}
+
+.acc-arrow {
+  font-size: 1rem;
+  color: #c8d8e8;
+  transition: transform 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.about-contact-card:hover .acc-arrow {
+  transform: translateX(3px);
+  color: #66a4db;
+}
+
+.about-tos-strip {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  background: rgba(102, 164, 219, 0.07);
+  border: 1.5px solid rgba(102, 164, 219, 0.35);
+  border-left: 4px solid #66a4db;
+  border-radius: 12px;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+
+
+.about-tos-strip-icon {
+  color: #66a4db;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.about-tos-strip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.about-tos-strip-label {
+  font-size: 0.73rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #3a7ab5;
+}
+
+.about-tos-strip-sub {
+  font-size: 0.78rem;
+  color: #5a7a9a;
+}
+
+.about-tos-strip-link {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+  background: #66a4db;
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: background 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.about-tos-strip-link:hover {
+  background: #4f8bc4;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 900px) {
+  .about-split {
+    flex-direction: column;
+    border-radius: 20px;
+    min-height: unset;
+  }
+
+  .about-split-left {
+    width: 100%;
+    min-height: 260px;
+    align-items: center;
+    padding: 2rem;
+  }
+
+  .about-split-img {
+    max-width: 180px;
+  }
+
+  .about-split-right {
+    padding: 2rem;
+    gap: 1.5rem;
+  }
+
+  .about-name {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .about-stat-number {
+    font-size: 2rem;
+  }
+
+  .about-stat-divider {
+    margin: 0 1rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .about-contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-tos-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-stat-number {
+    font-size: 1.6rem;
+  }
+
+  .about-stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .about-stat-divider {
+    margin: 0 0.7rem;
+  }
+
+  .about-bio {
+    font-size: 1rem;
+  }
+
+  .about-contact {
+    padding: 1.25rem 1rem;
+  }
+}
