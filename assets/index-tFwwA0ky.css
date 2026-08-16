@@ -2916,6 +2916,71 @@ button, input, textarea, select {
   outline: none;
 }
 
+/* ── Add options (client/service) */
+.admin-add-options select {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  background: #0d1724;
+  border: 1px solid rgba(102,164,219,0.16);
+  color: #f1f8ff;
+  font-size: 0.95rem;
+  outline: none;
+}
+.admin-add-options select:focus {
+  border-color: #66a4db;
+  box-shadow: 0 0 0 4px rgba(102,164,219,0.08);
+}
+.admin-add-options label span {
+  color: #b3c7e5;
+  font-size: 0.9rem;
+  margin-right: 0.25rem;
+}
+
+/* improve select appearance inside admin-input-row if used */
+.admin-input-row select {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  background: #000;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+/* botão de adicionar na etapa selecionada */
+.admin-add-stage-btn {
+  margin-left: auto;
+  padding: 0.65rem 1rem;
+  background: linear-gradient(135deg, #66a4db, #4b8ede);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #07101d;
+  font-weight: 800;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(75,142,222,0.12);
+  transition: transform 0.14s ease, opacity 0.12s ease, box-shadow 0.12s;
+}
+.admin-add-stage-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.98;
+  box-shadow: 0 10px 26px rgba(75,142,222,0.18);
+}
+.admin-add-stage-btn:active { transform: translateY(0); }
+
+@media (max-width: 640px) {
+  .admin-add-stage-btn { width: 100%; margin-left: 0; }
+}
+
+/* botão ver mais/menos para colunas longas */
+.admin-more-btn {
+  padding: 0.45rem 0.85rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(102,164,219,0.12);
+  color: #cde7ff;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.admin-more-btn:hover { background: rgba(102,164,219,0.12); }
+
 .admin-client-row input:focus,
 .admin-count-row input:focus,
 .admin-input-row input:focus {
@@ -3007,8 +3072,6 @@ button, input, textarea, select {
 .admin-url-input-row button:hover {
   transform: translateY(-1px);
   opacity: 0.95;
-}
-
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.75rem;
