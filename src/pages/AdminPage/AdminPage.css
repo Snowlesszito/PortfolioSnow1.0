@@ -461,8 +461,6 @@
 .admin-url-input-row button:hover {
   transform: translateY(-1px);
   opacity: 0.95;
-}
-
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.75rem;

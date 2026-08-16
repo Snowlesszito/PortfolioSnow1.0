@@ -160,11 +160,14 @@ export default function AdminPage() {
   const [clientInput,  setClientInput] = useState({ name: '' })
   const [clientError,  setClientError] = useState('')
   const [dragging,     setDragging]    = useState(null)
+<<<<<<< HEAD
   const [selectedClient, setSelectedClient] = useState('')
   const [selectedService, setSelectedService] = useState('')
   const [selectedStage, setSelectedStage] = useState(COLUMNS[0])
   const [expandedCompleted, setExpandedCompleted] = useState(false)
   const [expandedClients, setExpandedClients] = useState(false)
+=======
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
 
   // ── gallery ──
   const [gallery,        setGallery]        = useState(makeEmptyGallery)
@@ -410,6 +413,7 @@ export default function AdminPage() {
   // ─── channels helpers ──────────────────────────────────────────────────────
 
   async function saveChannels(list) {
+<<<<<<< HEAD
     // sanitize list: Firestore rejects `undefined` values inside documents
     const cleaned = (list ?? []).map(ch => ({
       channelUrl: ch.channelUrl,
@@ -435,6 +439,11 @@ export default function AdminPage() {
       setChannelsError('Falha ao salvar canais. Verifique o console para mais detalhes.')
       return false
     }
+=======
+    await setDoc(doc(db, 'channels', 'list'), { channels: list })
+    setChannelsSaved(true)
+    setTimeout(() => setChannelsSaved(false), 2000)
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
   }
 
   function addChannel() {
@@ -449,10 +458,14 @@ export default function AdminPage() {
     const updated = [...channels, { channelUrl: url, subscribers: subs, works: [] }]
     setChannels(updated)
     setNewChannel({ channelUrl: '', subscribers: '' })
+<<<<<<< HEAD
     ;(async () => {
       const ok = await saveChannels(updated)
       if (!ok) setNewChannelErr('Falha ao salvar canal. Tente novamente.')
     })()
+=======
+    saveChannels(updated)
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
   }
 
   function removeChannel(index) {
@@ -466,6 +479,7 @@ export default function AdminPage() {
     const videoUrl = (v.videoUrl ?? '').trim()
     const label    = (v.label    ?? '').trim()
     if (!videoUrl && !label) return
+<<<<<<< HEAD
     const workObj = {}
     if (videoUrl) workObj.videoUrl = videoUrl
     if (label)    workObj.label    = label
@@ -482,6 +496,15 @@ export default function AdminPage() {
         setChannels(channels)
       }
     })()
+=======
+    const updated = channels.map((ch, i) => {
+      if (i !== chIndex) return ch
+      return { ...ch, works: [...(ch.works ?? []), { videoUrl: videoUrl || undefined, label: label || undefined }] }
+    })
+    setChannels(updated)
+    setNewVideo(prev => ({ ...prev, [chIndex]: { videoUrl: '', label: '' } }))
+    saveChannels(updated)
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
   }
 
   function removeVideoFromChannel(chIndex, vIndex) {
@@ -490,9 +513,13 @@ export default function AdminPage() {
       return { ...ch, works: (ch.works ?? []).filter((_, j) => j !== vIndex) }
     })
     setChannels(updated)
+<<<<<<< HEAD
     saveChannels(updated).then(ok => {
       if (!ok) setChannels(channels)
     })
+=======
+    saveChannels(updated)
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
   }
 
   function updateSubscribers(chIndex, value) {
@@ -509,6 +536,7 @@ export default function AdminPage() {
   }
 
   async function addItem(field) {
+<<<<<<< HEAD
     const typedName = (input[field]?.name ?? '').trim()
     const qty  = parseInt(input[field]?.qty) || 1
     const clientName = typedName || selectedClient
@@ -523,6 +551,12 @@ export default function AdminPage() {
     )
 
     const updated = { ...commissions, [field]: [...commissions[field], ...Array(qty).fill(itemName)] }
+=======
+    const name = input[field].name.trim()
+    const qty  = parseInt(input[field].qty) || 1
+    if (!name) return
+    const updated = { ...commissions, [field]: [...commissions[field], ...Array(qty).fill(name)] }
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
     setCommissions(updated)
     setInput(prev => ({ ...prev, [field]: { name: '', qty: '1' } }))
     await saveCommissions(updated)
@@ -545,6 +579,7 @@ export default function AdminPage() {
     const updated = { ...commissions, clients: [...commissions.clients, { name, code: generateCode(name) }] }
     setCommissions(updated)
     setClientInput({ name: '' }); setClientError('')
+<<<<<<< HEAD
     const ok = await saveCommissions(updated)
     if (ok) setSelectedClient(name)
   }
@@ -557,6 +592,13 @@ export default function AdminPage() {
       if (removed && removed.name === selectedClient) setSelectedClient('')
       return { ...prev, clients: newClients }
     })
+=======
+    await saveCommissions(updated)
+  }
+
+  function removeClient(index) {
+    setCommissions(prev => ({ ...prev, clients: prev.clients.filter((_, i) => i !== index) }))
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
   }
 
   function onKanbanDragStart(field, index) { setDragging({ field, index }) }
@@ -660,18 +702,24 @@ export default function AdminPage() {
                 <table className="admin-table">
                   <thead><tr><th>#</th><th>Name</th><th>Ações</th></tr></thead>
                   <tbody>
+<<<<<<< HEAD
                     {(() => {
                       const all = commissions.clients ?? []
                       if (!all.length) return <tr><td colSpan="3">Nenhum cliente ainda.</td></tr>
                       const showAll = expandedClients
                       const list = showAll ? all : all.slice(0, 10)
                       return list.map((c, i) => (
+=======
+                    {commissions.clients?.length
+                      ? commissions.clients.map((c, i) => (
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
                         <tr key={i}>
                           <td>{i + 1}</td>
                           <td>{c.name}</td>
                           <td><button className="admin-remove" onClick={() => removeClient(i)}>Remover</button></td>
                         </tr>
                       ))
+<<<<<<< HEAD
                     })()}
                   </tbody>
                 </table>
@@ -720,6 +768,16 @@ export default function AdminPage() {
               </div>
               <div className="admin-kanban">
               
+=======
+                      : <tr><td colSpan="3">Nenhum cliente ainda.</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="admin-kanban">
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
               {COLUMNS.map(field => (
                 <div
                   key={field}
@@ -747,6 +805,7 @@ export default function AdminPage() {
                     <button onClick={() => addItem(field)}>+</button>
                   </div>
                   <ul className="admin-list">
+<<<<<<< HEAD
                     {(() => {
                       const all = commissions[field] ?? []
                       const showAll = field === 'concluidos' ? expandedCompleted : true
@@ -775,6 +834,20 @@ export default function AdminPage() {
                       </button>
                     </div>
                   )}
+=======
+                    {commissions[field]?.map((item, i) => (
+                      <li
+                        key={i}
+                        draggable
+                        onDragStart={() => onKanbanDragStart(field, i)}
+                        className={`admin-card ${dragging?.field === field && dragging?.index === i ? 'dragging' : ''}`}
+                      >
+                        <span>⠿ {item}</span>
+                        <button className="admin-remove" onClick={() => removeItem(field, i)}>✕</button>
+                      </li>
+                    ))}
+                  </ul>
+>>>>>>> 9becf87ca88997bdc16f9a0d2e49c248da48b34a
                 </div>
               ))}
             </div>
