@@ -509,6 +509,22 @@ export default function AdminPage() {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  function exportSnapshot() {
+    try {
+      const blob = new Blob([JSON.stringify(commissions, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'commissions-snapshot.json'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.warn('Export snapshot failed', err)
+    }
+  }
+
   async function addItem(field) {
     const typedName = (input[field]?.name ?? '').trim()
     const qty  = parseInt(input[field]?.qty) || 1
@@ -615,9 +631,12 @@ export default function AdminPage() {
           <div className="admin-page">
             <div className="admin-header">
               <h1>Commissions</h1>
-              <button className="admin-save" onClick={() => saveCommissions(commissions)}>
-                {saved ? '✓ Saved!' : 'Save'}
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="admin-save" onClick={() => saveCommissions(commissions)}>
+                  {saved ? '✓ Saved!' : 'Save'}
+                </button>
+                <button className="admin-save" onClick={() => exportSnapshot()} title="Download commissions snapshot as JSON">Export snapshot</button>
+              </div>
             </div>
 
             <div className="admin-section">
