@@ -28,13 +28,9 @@ function App() {
       setTimeout(() => el.remove(), 500)
     }
 
-    const minDelay = new Promise(res => setTimeout(res, 300))
-    const pageLoad = new Promise(res => {
-      if (document.readyState === 'complete') res()
-      else window.addEventListener('load', res, { once: true })
-    })
-
-    Promise.all([minDelay, pageLoad]).then(dismiss)
+    // The app is mounted at this point; third-party images should not block the UI.
+    const timer = setTimeout(dismiss, 300)
+    return () => clearTimeout(timer)
   }, [])
 
   return (
