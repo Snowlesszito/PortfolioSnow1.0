@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import './DiscordChat.css'
 
-const perfilSnowless = 'https://i.postimg.cc/zGwN7NKz/Perfil_About.png'
+const perfilSnowless = `${import.meta.env.BASE_URL}site-assets/profile/Perfil-About.png`
 
 const messages = [
   { id: 1, user: 'You',      avatar: 'Y', color: '#7289da', text: 'Hey! I\'d like to order a thumbnail 👋',          delay: 0.2 },

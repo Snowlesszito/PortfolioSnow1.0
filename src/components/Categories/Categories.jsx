@@ -19,7 +19,12 @@ const initialPreviews = Object.fromEntries(
 
 function CategoryCard({ title, description, category, path }) {
   const navigate = useNavigate()
-  const [images, setImages] = useState(initialPreviews[category].slice(0, 4).map(item => item.src))
+  const getImageUrls = items => items
+    .map(item => item?.src ?? item?.url)
+    .filter(url => typeof url === 'string' && /^https?:\/\//i.test(url))
+    .slice(0, 4)
+
+  const [images, setImages] = useState(() => getImageUrls(initialPreviews[category]))
   const [totalCount, setTotalCount] = useState(initialPreviews[category].length)
   const [current, setCurrent] = useState(0)
   const [prev, setPrev] = useState(null)
@@ -30,7 +35,10 @@ function CategoryCard({ title, description, category, path }) {
     loadGalleryItems(category).then(items => {
       if (!active) return
       const finalItems = items.length >= initialPreviews[category].length ? items : initialPreviews[category]
-      setImages(finalItems.slice(0, 4).map(item => item.src))
+      setCurrent(0)
+      setPrev(null)
+      setFading(false)
+      setImages(getImageUrls(finalItems))
       setTotalCount(finalItems.length)
     }).catch(() => {})
     return () => { active = false }
@@ -59,12 +67,16 @@ function CategoryCard({ title, description, category, path }) {
               src={images[prev]}
               alt={title}
               className="cat-img cat-img-out"
+              onError={() => setPrev(null)}
             />
           )}
           <img
             src={images[current] || ''}
             alt={title}
             className={`cat-img ${fading ? 'cat-img-in' : ''}`}
+            onError={() => {
+              if (images.length > 1) setCurrent(index => (index + 1) % images.length)
+            }}
           />
           <div className="cat-overlay">
             <h3 className="cat-title">{title}</h3>

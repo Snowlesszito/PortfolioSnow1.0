@@ -191,6 +191,7 @@ export default function AdminPage() {
   const [uploadMsg,    setUploadMsg]    = useState('')
   const [cooldown,     setCooldown]     = useState(getRemainingCooldown)
   const [newUrl,       setNewUrl]       = useState('')
+  const [newUrls,      setNewUrls]      = useState('')
   const [newUrlError,  setNewUrlError]  = useState('')
   const [newUrlMsg,    setNewUrlMsg]    = useState('')
   const fileRef     = useRef(null)
@@ -405,6 +406,52 @@ export default function AdminPage() {
     } catch (err2) {
       console.error('[admin] addUrl failed', err2)
       setNewUrlError('Falha ao salvar. Tente novamente.')
+    }
+  }
+
+  async function addUrls() {
+    const urls = [...new Set(newUrls.split(/[\s,]+/).map(url => url.trim()).filter(Boolean))]
+    if (!urls.length) {
+      setNewUrlError('Cole pelo menos uma URL.')
+      setNewUrlMsg('')
+      return
+    }
+
+    const invalid = urls.find(url => validateUrl(url))
+    if (invalid) {
+      setNewUrlError(`URL inválida: ${invalid}`)
+      setNewUrlMsg('')
+      return
+    }
+
+    const existingUrls = new Set(currentItems.map(item => item.url ?? item.src).filter(Boolean))
+    const newItems = urls
+      .filter(url => !existingUrls.has(url))
+      .map((url, index) => ({
+        id: `url_${Date.now()}_${index}`,
+        url,
+        src: url,
+        label: url.split('/').pop().split('?')[0] || `image-${Date.now()}-${index}`,
+      }))
+
+    if (!newItems.length) {
+      setNewUrlError('Todas essas URLs já estão nesta galeria.')
+      setNewUrlMsg('')
+      return
+    }
+
+    try {
+      const updated = [...currentItems, ...newItems]
+      setCurrentItems(updated)
+      await persistCurrent(updated)
+      setNewUrls('')
+      setNewUrlError('')
+      setNewUrlMsg(`${newItems.length} imagem(ns) adicionada(s) com sucesso.`)
+      setTimeout(() => setNewUrlMsg(''), 4000)
+    } catch (err) {
+      console.error('[admin] addUrls failed', err)
+      setNewUrlError('Falha ao salvar as imagens. Tente novamente.')
+      setNewUrlMsg('')
     }
   }
 
@@ -869,6 +916,14 @@ export default function AdminPage() {
                   />
                   <button onClick={addUrl}>Adicionar URL</button>
                 </div>
+                <textarea
+                  className="admin-url-bulk-input"
+                  placeholder="Cole várias URLs aqui, uma por linha"
+                  value={newUrls}
+                  onChange={e => { setNewUrls(e.target.value); setNewUrlError(''); setNewUrlMsg('') }}
+                  rows={5}
+                />
+                <button className="admin-url-bulk-button" onClick={addUrls}>Adicionar várias URLs</button>
                 {newUrlError && <p className="admin-error">{newUrlError}</p>}
                 {newUrlMsg   && <p className="admin-success">{newUrlMsg}</p>}
               </div>

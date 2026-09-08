@@ -73,15 +73,15 @@ export const STATIC_GALLERY_URLS = {
 }
 
 export const STATIC_DECORATION_URLS = {
-  'outros/decoracoes/roblox.png': 'https://i.postimg.cc/bNN1pYYB/roblox.png',
-  'outros/decoracoes/sentado.png': 'https://i.postimg.cc/fTTYDWW1/sentado.png',
-  'outros/decoracoes/Perfil_About.png': 'https://i.postimg.cc/zGwN7NKz/Perfil_About.png',
-  'outros/decoracoes/Etapa1.png': 'https://i.postimg.cc/tCCFpRRh/Etapa1.png',
-  'outros/decoracoes/Etapa2.png': 'https://i.postimg.cc/xTTLnjjv/Etapa2.png',
-  'outros/decoracoes/Etapa3.png': 'https://i.postimg.cc/Prr1Tffz/Etapa3.png',
-  'outros/decoracoes/grande.png': 'https://i.postimg.cc/655Ct66V/grande.png',
-  'outros/antesedepois/antes.jpg': 'https://i.postimg.cc/KzPtvRMy/antes.jpg',
-  'outros/antesedepois/depois.jpg': 'https://i.postimg.cc/85RLPj6Q/depois.jpg',
-  'outros/antesedepois/pintura.png': 'https://i.postimg.cc/XJf97pCM/pintura.png',
-  'banner/Banner.png': 'https://i.postimg.cc/q7QmBDVj/Banner.png',
+  'outros/decoracoes/roblox.png': `${import.meta.env.BASE_URL}site-assets/decorations/roblox.png`,
+  'outros/decoracoes/sentado.png': `${import.meta.env.BASE_URL}site-assets/decorations/sentado.png`,
+  'outros/decoracoes/Perfil_About.png': `${import.meta.env.BASE_URL}site-assets/profile/Perfil-About.png`,
+  'outros/decoracoes/Etapa1.png': `${import.meta.env.BASE_URL}site-assets/decorations/Etapa1.png`,
+  'outros/decoracoes/Etapa2.png': `${import.meta.env.BASE_URL}site-assets/decorations/Etapa2.png`,
+  'outros/decoracoes/Etapa3.png': `${import.meta.env.BASE_URL}site-assets/decorations/Etapa3.png`,
+  'outros/decoracoes/grande.png': `${import.meta.env.BASE_URL}site-assets/decorations/grande.png`,
+  'outros/antesedepois/antes.jpg': `${import.meta.env.BASE_URL}site-assets/before-after/antes.jpg`,
+  'outros/antesedepois/depois.jpg': `${import.meta.env.BASE_URL}site-assets/before-after/depois.jpg`,
+  'outros/antesedepois/pintura.png': `${import.meta.env.BASE_URL}site-assets/decorations/pintura.png`,
+  'banner/Banner.png': `${import.meta.env.BASE_URL}site-assets/banner/Banner.png`,
 }
