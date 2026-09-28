@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Home from './pages/Home/Home'
 import ThumbnailsPage from './pages/ThumbnailsPage/ThumbnailsPage.jsx'
 import KeyArtsPage from './pages/KeyArtsPage/KeyArtsPage'
@@ -11,9 +11,23 @@ import AdminLoginPage from './pages/AdminLoginPage/AdminLoginPage'
 import RequireAuth from './components/RequireAuth/RequireAuth'
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage'
 
+function ScrollToTop() {
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.pathname === '/') return
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [location.pathname])
+
+  return null
+}
+
 function App() {
   useEffect(() => {
-   
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+
     const params = new URLSearchParams(window.location.search)
     const redirectPath = params.get('p')
     if (redirectPath) {
@@ -41,6 +55,8 @@ function App() {
         <div className="aurora-blob aurora-blob-3" />
         <div className="aurora-blob aurora-blob-4" />
       </div>
+
+      <ScrollToTop />
 
       <Routes>
         <Route path="/" element={<Home />} />
