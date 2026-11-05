@@ -65,8 +65,8 @@ function App() {
         <Route path="/promocional" element={<PromocionalPage />} />
         <Route path="/tos" element={<TosPage />} />
         <Route path="/profiles" element={<ProfilePage />} />
-        <Route path="/admin/login" element={<AdminLoginPage />} />
-        <Route path="/admin" element={<RequireAuth><AdminPage /></RequireAuth>} />
+        <Route path="/bagunça-a7k9x/login" element={<AdminLoginPage />} />
+        <Route path="/bagunça-a7k9x" element={<RequireAuth><AdminPage /></RequireAuth>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>

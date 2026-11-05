@@ -16,7 +16,7 @@ export default function RequireAuth({ children }) {
 
   if (status === 'pending') return null
   if (status === 'unauthenticated') {
-    return <Navigate to="/admin/login" state={{ from: location }} replace />
+    return <Navigate to="/bagunça-a7k9x/login" state={{ from: location }} replace />
   }
 
   return children

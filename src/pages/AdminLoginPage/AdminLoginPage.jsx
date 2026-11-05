@@ -10,7 +10,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('')
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from?.pathname || '/admin'
+  const from = location.state?.from?.pathname || '/bagunça-a7k9x'
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
