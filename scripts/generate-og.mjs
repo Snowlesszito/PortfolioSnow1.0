@@ -1,32 +1,26 @@
 import satori from 'satori'
 import { Resvg } from '@resvg/resvg-js'
-import { readFileSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
 const root = join(__dir, '..')
 
-let profileSrc = null
-try {
-  const profileImg = readFileSync(join(root, 'src/assets/images/outros/about/perfil.jpg'))
-  profileSrc = `data:image/jpeg;base64,${profileImg.toString('base64')}`
-} catch (e) {
-  // local image missing — try to fetch the static URL used by the app
-  try {
-    const fallback = 'https://i.postimg.cc/zGwN7NKz/Perfil_About.png'
-    const res = await fetch(fallback)
-    if (res.ok) {
-      const ab = await res.arrayBuffer()
-      profileSrc = `data:image/png;base64,${Buffer.from(ab).toString('base64')}`
-    }
-  } catch (err) {
-    // ignore, we'll render without a profile image
-  }
-}
+const profilePath = join(root, 'public/site-assets/profile/Perfil-About.png')
+const profileSrc = existsSync(profilePath)
+  ? `data:image/png;base64,${readFileSync(profilePath).toString('base64')}`
+  : null
 
-const fontData = readFileSync('C:/Windows/Fonts/segoeui.ttf')
-const fontBold = readFileSync('C:/Windows/Fonts/segoeuib.ttf')
+const fontPaths = process.platform === 'win32'
+  ? ['C:/Windows/Fonts/segoeui.ttf', 'C:/Windows/Fonts/segoeuib.ttf']
+  : ['/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf']
+const [fontPath, fontBoldPath] = fontPaths
+if (!existsSync(fontPath) || !existsSync(fontBoldPath)) {
+  throw new Error(`Open Graph fonts not found: ${fontPath}, ${fontBoldPath}`)
+}
+const fontData = readFileSync(fontPath)
+const fontBold = readFileSync(fontBoldPath)
 
 // Try to read the About bio from the React component to keep OG in sync
 let aboutBio = ''
@@ -56,39 +50,45 @@ const stats = [
   { num: '+13', label: 'SATISFIED\nCLIENTS' },
 ]
 
-// If a local snapshot exists (downloaded from Admin > Export snapshot), use it to update stats
-try {
-  // First, try to read Firestore directly via REST using values from .env
-  try {
-    const envRaw = readFileSync(join(root, '.env'), 'utf8')
-    const env = Object.fromEntries(envRaw.split(/\r?\n/).map(l => l.split('=').map(s => s && s.trim())).filter(Boolean))
-    const apiKey = env['VITE_FIREBASE_API_KEY']?.replace(/"/g, '').trim()
-    const projectId = env['VITE_FIREBASE_PROJECT_ID']?.replace(/"/g, '').trim()
-    if (apiKey && projectId) {
-      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/commissions/status?key=${apiKey}`
-      const res = await fetch(url)
-      if (res.ok) {
-        const doc = await res.json()
-        const f = doc.fields || {}
-        const completed = (f.concluidos && f.concluidos.arrayValue && Array.isArray(f.concluidos.arrayValue.values)) ? f.concluidos.arrayValue.values.length : undefined
-        const clients = (f.clients && f.clients.arrayValue && Array.isArray(f.clients.arrayValue.values)) ? f.clients.arrayValue.values.length : undefined
-        if (typeof completed === 'number') stats[1].num = `+${completed}`
-        if (typeof clients === 'number')   stats[2].num = `+${clients}`
-      }
-    }
-  } catch (e) {
-    // ignore Firestore fetch errors and fall back to snapshot/defaults
-  }
+const envPath = join(root, '.env')
+const envRaw = existsSync(envPath) ? readFileSync(envPath, 'utf8') : ''
+const localEnv = Object.fromEntries(
+  envRaw.split(/\r?\n/)
+    .filter(line => line.trim() && !line.trim().startsWith('#'))
+    .map(line => {
+      const separator = line.indexOf('=')
+      return separator < 0
+        ? [line.trim(), '']
+        : [line.slice(0, separator).trim(), line.slice(separator + 1).trim().replace(/^(['"])(.*)\1$/, '$2')]
+    })
+)
+const apiKey = process.env.VITE_FIREBASE_API_KEY || localEnv.VITE_FIREBASE_API_KEY
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID || localEnv.VITE_FIREBASE_PROJECT_ID
 
+if (process.env.GITHUB_ACTIONS === 'true' && (!apiKey || !projectId)) {
+  throw new Error('Missing VITE_FIREBASE_API_KEY or VITE_FIREBASE_PROJECT_ID in GitHub Actions secrets')
+}
+
+if (apiKey && projectId) {
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/commissions/status?key=${encodeURIComponent(apiKey)}`
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Firestore request failed: ${response.status} ${response.statusText}`)
+  }
+  const { fields = {} } = await response.json()
+  const completed = fields.concluidos?.arrayValue?.values
+  const clients = fields.clients?.arrayValue?.values
+  if (Array.isArray(completed)) stats[1].num = `+${completed.length}`
+  if (Array.isArray(clients)) stats[2].num = `+${clients.length}`
+} else {
   const snapshotPath = join(root, 'commissions-snapshot.json')
-  const raw = readFileSync(snapshotPath, 'utf8')
-  const snap = JSON.parse(raw)
-  const completed = Array.isArray(snap.concluidos) ? snap.concluidos.length : (snap.concluded?.length || 0)
-  const clients = Array.isArray(snap.clients) ? snap.clients.length : 0
-  stats[1].num = `+${completed}`
-  stats[2].num = `+${clients}`
-} catch (e) {
-  // no snapshot present — keep defaults
+  if (existsSync(snapshotPath)) {
+    const snapshot = JSON.parse(readFileSync(snapshotPath, 'utf8'))
+    const completed = Array.isArray(snapshot.concluidos) ? snapshot.concluidos.length : (snapshot.concluded?.length || 0)
+    const clients = Array.isArray(snapshot.clients) ? snapshot.clients.length : 0
+    stats[1].num = `+${completed}`
+    stats[2].num = `+${clients}`
+  }
 }
 
 const image = el('div', {
@@ -163,4 +163,16 @@ const svg = await satori(image, {
 
 const png = new Resvg(svg).render().asPng()
 writeFileSync(join(root, 'public/og-preview.png'), png)
+const indexPath = join(root, 'index.html')
+const cacheVersion = `${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-1`
+const indexHtml = readFileSync(indexPath, 'utf8')
+const cacheVersionPattern = /((?:property="og:image"|name="twitter:image")\s+content="https:\/\/snowlesszito\.com\/og-preview\.png\?v=)[^"]+(")/g
+if ([...indexHtml.matchAll(cacheVersionPattern)].length !== 2) {
+  throw new Error('Expected Open Graph and Twitter image URLs in index.html')
+}
+const updatedHtml = indexHtml.replace(
+  cacheVersionPattern,
+  `$1${cacheVersion}$2`
+)
+writeFileSync(indexPath, updatedHtml)
 console.log('✓ public/og-preview.png gerado com sucesso!')
